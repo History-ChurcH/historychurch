@@ -6,7 +6,8 @@
  *   npm run import:wordpress -- --bulletins-since=2024-01-01 --albums=40
  *
  * 옵션
- *   --only=columns,bulletins,albums,notices   가져올 종류 (기본: 전부)
+ *   --only=columns,bulletins,albums,notices,grace,misc   가져올 종류 (기본: 전부)
+ *                                              grace = 은혜나눔 게시판, misc = 분류 없이 올라간 글(주보·목회서신·공지로 나눠 넣음)
  *   --bulletins-since=YYYY-MM-DD               이 날짜 이후 주보만 (기본: 2026-01-01)
  *   --albums=N                                  최근 앨범 N개만 (기본: 8)
  *   --notices-since=YYYY-MM-DD                 이 날짜 이후 교회 소식만 (기본: 2022-01-01)
@@ -15,7 +16,7 @@
  *
  * 이미 있는 파일은 건너뜁니다. 사진은 WebP 로 줄여서 저장합니다.
  */
-import { mkdir, writeFile, access } from 'node:fs/promises';
+import { mkdir, writeFile, access, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import dns from 'node:dns';
 import sharp from 'sharp';
@@ -31,12 +32,12 @@ const args = Object.fromEntries(
     return [k, v];
   }),
 );
-const only = new Set((args.only || 'columns,bulletins,albums,notices').split(','));
+const only = new Set((args.only || 'columns,bulletins,albums,notices,grace,misc').split(','));
 const bulletinsSince = args['bulletins-since'] || '2026-01-01';
 const albumLimit = Number(args.albums || 8);
 const noticesSince = args['notices-since'] || '2022-01-01';
 
-const CATEGORY = { bulletins: 8, columns: 10, albums: 14 };
+const CATEGORY = { uncategorized: 1, bulletins: 8, columns: 10, albums: 14 };
 const dryRun = args['dry-run'] === 'true';
 
 // historychurch.org 가 이미 새 사이트를 가리키므로, 옛 워드프레스는 서버 주소로 직접 찾아갑니다.
@@ -247,7 +248,7 @@ async function kboardDocs(board) {
   const uids = new Set();
   for (let page = 1; page <= 20; page++) {
     const html = await get(`${WP}/${board}?pageid=${page}`);
-    const found = [...html.matchAll(/mod=document&(?:amp;)?uid=(\d+)/g)].map((m) => Number(m[1]));
+    const found = [...html.matchAll(/mod=document&(?:amp;|#038;)?uid=(\d+)/g)].map((m) => Number(m[1]));
     const before = uids.size;
     found.forEach((u) => uids.add(u));
     if (uids.size === before) break;
@@ -263,7 +264,8 @@ async function kboardDocs(board) {
     const attachments = [...html.matchAll(/window\.location\.href='([^']*kboard_file_download[^']*)'" title="다운로드 ([^"]+)"/g)]
       .filter((m) => /\.(png|jpe?g|webp|gif)$/i.test(m[2]))
       .map((m) => `${WP}${decode(m[1])}`);
-    docs.push({ uid, title, posted, content, attachments });
+    const writer = decode(html.match(/detail-writer">[\s\S]*?detail-value">([^<]*)</)?.[1]?.trim() || '');
+    docs.push({ uid, title, posted, content, attachments, writer });
   }
   return docs;
 }
@@ -337,8 +339,85 @@ async function importNotices() {
   console.log();
 }
 
+// ---------------------------------------------------------------------------
+// 5) 은혜나눔 게시판 (성도들의 간증·묵상)
+// ---------------------------------------------------------------------------
+async function importGrace() {
+  const docs = await kboardDocs('grace');
+  console.log(`은혜나눔 ${docs.length}개`);
+  const slug = uniqueSlugger();
+  for (const d of docs.sort((a, b) => a.posted.localeCompare(b.posted))) {
+    const date = d.posted.slice(0, 10);
+    const id = slug(date);
+    if (await exists(join(CONTENT, 'grace', `${id}.md`))) continue;
+    const images = [];
+    for (const [i, src] of [...imgSrcs(d.content), ...d.attachments].entries()) {
+      const local = await saveImage(src, 'grace', `${id}-${i + 1}`, 1600);
+      if (local) images.push(local);
+    }
+    // 작성자가 로그인 아이디(church44 등)면 이름을 비워 둡니다.
+    const author = /^[\w.@-]+$/.test(d.writer) ? '' : d.writer;
+    await writeEntry('grace', id, { title: d.title, date, author, images }, toMarkdown(d.content.replace(/<img[^>]*>/gi, '')));
+    process.stdout.write('.');
+  }
+  console.log();
+}
+
+// ---------------------------------------------------------------------------
+// 6) 분류 없이 올라간 글 — 제목을 보고 주보 · 목회서신 · 공지로 나눠 넣습니다.
+// ---------------------------------------------------------------------------
+/** 같은 날짜에 다른 글이 이미 있으면 -2, -3 … 을 붙이고, 같은 제목이 이미 있으면 가져온 것으로 봅니다. */
+async function freeId(collection, date, title) {
+  for (let n = 1; ; n++) {
+    const id = n === 1 ? date : `${date}-${n}`;
+    const file = join(CONTENT, collection, `${id}.md`);
+    if (!(await exists(file))) return { id, fresh: true };
+    if ((await readFile(file, 'utf8')).includes(q(title))) return { id, fresh: false };
+  }
+}
+
+async function importMisc() {
+  const posts = await wpPosts(CATEGORY.uncategorized);
+  console.log(`분류 없는 글 ${posts.length}개`);
+  for (const p of posts) {
+    const title = decode(p.title.rendered).normalize('NFKC').replace(/。/g, '.').trim();
+    const date = ymd(p.date);
+    const html = p.content.rendered;
+    const kind = /주보/.test(title) ? 'bulletins' : /목회서신|묵상|칼럼/.test(title) ? 'columns' : 'notices';
+    const { id, fresh } = await freeId(kind, date, title);
+    if (!fresh) continue;
+    const srcs = imgSrcs(html);
+    if (kind === 'columns') {
+      const map = new Map();
+      let cover = '';
+      for (const [i, src] of srcs.entries()) {
+        const local = await saveImage(src, 'columns', i ? `${id}-${i + 1}` : id, 1200);
+        if (!local) continue;
+        if (i === 0) cover = local;
+        else map.set(src, local);
+      }
+      await writeEntry('columns', id, { title, date, author: '김영훈 담임목사', cover }, toMarkdown(html.replace(/<img[^>]*>/i, ''), map));
+    } else {
+      const images = [];
+      for (const [i, src] of srcs.entries()) {
+        const local = await saveImage(src, kind, `${id}-${i + 1}`, kind === 'bulletins' ? 2000 : 1800);
+        if (local) images.push(local);
+      }
+      const text = toMarkdown(html.replace(/<img[^>]*>/gi, ''));
+      if (kind === 'bulletins' && !images.length && !text.trim()) {
+        console.warn(`  ! ${date} 주보: 옛 서버에 사진 파일이 없어 건너뜁니다`);
+        continue;
+      }
+      await writeEntry(kind, id, kind === 'bulletins' ? { title, date, images, file: '' } : { title, date, pinned: false, images }, text);
+    }
+    console.log(`  + ${kind}/${id}  ${title}`);
+  }
+}
+
 if (only.has('columns')) await importColumns();
 if (only.has('bulletins')) await importBulletins();
 if (only.has('albums')) await importAlbums();
 if (only.has('notices')) await importNotices();
+if (only.has('grace')) await importGrace();
+if (only.has('misc')) await importMisc();
 console.log('완료했습니다.');

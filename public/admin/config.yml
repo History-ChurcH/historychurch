@@ -146,6 +146,30 @@ collections:
       - { name: images, label: 이미지 (선택), widget: image, multiple: true, required: false }
       - { name: body, label: 내용, widget: markdown, required: false }
 
+  # ───────────────────────── 은혜나눔 ─────────────────────────
+  - name: grace
+    label: 은혜나눔
+    label_singular: 은혜나눔 글
+    icon: volunteer_activism
+    description: 성도들의 간증과 묵상 나눔입니다. 받은 글을 대신 올릴 때는 글쓴이 칸에 이름을 적어 주세요.
+    folder: /src/content/grace
+    preview_path: 'news/grace/{{filename}}/'
+    create: true
+    slug: '{{fields.date}}'
+    summary: '{{date}} · {{title}}'
+    sortable_fields:
+      fields: [date, title]
+      default: { field: date, direction: descending }
+    media_folder: '{{media_folder}}/grace'
+    public_folder: '{{public_folder}}/grace'
+    editor: { preview: false }
+    fields:
+      - { name: title, label: 제목, widget: string }
+      - { name: date, label: 날짜, widget: datetime, type: date, default: '{{now}}' }
+      - { name: author, label: 글쓴이 (선택), widget: string, required: false }
+      - { name: images, label: 이미지 (선택), widget: image, multiple: true, required: false }
+      - { name: body, label: 내용, widget: markdown, required: false }
+
   # ───────────────────────── 앨범 ─────────────────────────
   - name: albums
     label: 앨범

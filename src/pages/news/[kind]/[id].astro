@@ -4,12 +4,12 @@ import Base from '../../../layouts/Base.astro';
 import CrossMark from '../../../components/CrossMark.astro';
 import { byDateDesc, excerpt, href, longDate } from '../../../lib/utils';
 
-type Kind = 'bulletins' | 'columns' | 'notices';
+type Kind = 'bulletins' | 'columns' | 'notices' | 'grace';
 type Entry = CollectionEntry<Kind>;
-const LABEL: Record<Kind, string> = { bulletins: '주보', columns: '목회서신', notices: '공지' };
+const LABEL: Record<Kind, string> = { bulletins: '주보', columns: '목회서신', notices: '공지', grace: '은혜나눔' };
 
 export async function getStaticPaths() {
-  const kinds: Kind[] = ['bulletins', 'columns', 'notices'];
+  const kinds: Kind[] = ['bulletins', 'columns', 'notices', 'grace'];
   const paths = [];
   for (const kind of kinds) {
     const list = ((await getCollection(kind)) as Entry[]).sort(byDateDesc);
@@ -44,7 +44,7 @@ const isColumn = kind === 'columns';
       <h1 class="h1 post-hero__title">{entry.data.title}</h1>
       <p class="muted">
         {longDate(entry.data.date)}
-        {isColumn && data.author && ` · ${data.author}`}
+        {(isColumn || kind === 'grace') && data.author && ` · ${data.author}`}
       </p>
     </div>
   </section>

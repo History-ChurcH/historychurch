@@ -30,6 +30,7 @@ src/
     bulletins/   주보
     columns/     목회서신
     notices/     공지 · 교회 소식
+    grace/       은혜나눔 (성도들의 간증 · 묵상)
     albums/      앨범
   data/
     site.json    교회 기본 정보 · 예배 시간 · 헌금 계좌 · 표어
@@ -146,15 +147,14 @@ scripts/
    - 실행되는 코드 없이 `dist/` 의 파일만 올리는 구성(정적 에셋)이라 방문자 요청은 무료·무제한입니다. Cloudflare 는 새 프로젝트에 Pages 대신 이 방식을 권장합니다.
 3. **저장소를 비공개로** — Settings → General → Danger Zone → *Change visibility* → Private. Cloudflare 는 그대로 빌드합니다.
    (예전 GitHub Pages 미리보기 `history-church.github.io` 는 이때 자동으로 내려갑니다. 배포 작업 파일은 이미 지워 두었습니다.)
-4. **남은 옛 글 가져오기** — 원래는 도메인을 바꾸기 전에 합니다. (현재 목회서신 전체, 주보 2021-09 ~ 2025-01 과 2026년, 최근 앨범 8개, 공지 4개가 옮겨져 있습니다. 2025년 2~7월 주보 상당수는 옛 서버에서도 사진이 지워져 있어 건너뛰었습니다.)
-   **남은 것: 2025년 8~12월 주보, 옛 앨범.** 도메인이 이미 새 사이트로 바뀌었으므로, SiteGround 를 해지하기 전에 옛 서버 주소(`35.247.160.145`)로 직접 접속해서 가져와야 합니다.
+4. **옛 글 가져오기 (2026-09-27 완료)** — 옛 워드프레스의 글을 모두 옮겼습니다: 목회서신 218개, 주보 218개(2021-09 ~), 앨범 203개(사진 1,786장), 공지 8개, 은혜나눔 6개.
+   2025년 2~11월 주보 상당수와 일부 앨범 사진은 **옛 서버에서도 파일이 지워져 있어** 옮기지 못했습니다(사진 약 160장).
+   다시 실행해야 할 때(이미 있는 글은 건너뜀). 도메인이 새 사이트로 바뀌었으므로 `--origin` 으로 옛 서버에 직접 접속합니다:
 
    ```bash
-   npm install
-   npm run import:wordpress -- --only=bulletins,albums --bulletins-since=2021-01-01 --albums=40
+   npm run import:wordpress -- --origin=35.247.160.145 --bulletins-since=2021-01-01 --albums=10000 --notices-since=2000-01-01
    ```
 
-   사진 용량이 커지므로(앨범 하나에 수 MB) 꼭 필요한 만큼만 가져오기를 권합니다.
 5. **도메인 연결 (2026-09-27 완료)** — 지금은 **Worker 경로(route)** 로 연결되어 있습니다: `historychurch.org/*` → `historychurch`, `www.historychurch.org/*` → `historychurch-www`(대표 주소로 301).
    경로 방식은 DNS 기록(주황 구름, Proxied)이 있어야 동작하므로 `historychurch.org`·`www` 의 `A` 기록을 지우지 마세요. 옛 서버 IP 를 가리키지만 요청은 Cloudflare 에서 끝나서 옛 서버로 가지 않습니다.
    경로는 `wrangler.jsonc` 에 넣지 않았습니다(자동 빌드용 토큰 권한과 무관하게 유지되도록). 대시보드 **Workers & Pages → historychurch → Settings → Domains & Routes** 에서 볼 수 있습니다.

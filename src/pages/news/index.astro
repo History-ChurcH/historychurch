@@ -5,21 +5,22 @@ import PageHero from '../../components/PageHero.astro';
 import CrossMark from '../../components/CrossMark.astro';
 import { dot, excerpt, href } from '../../lib/utils';
 
-const KIND = { bulletins: '주보', columns: '목회서신', notices: '공지' } as const;
+const KIND = { bulletins: '주보', columns: '목회서신', notices: '공지', grace: '은혜나눔' } as const;
 
-const [bulletins, columns, notices] = await Promise.all([getCollection('bulletins'), getCollection('columns'), getCollection('notices')]);
+const [bulletins, columns, notices, grace] = await Promise.all([getCollection('bulletins'), getCollection('columns'), getCollection('notices'), getCollection('grace')]);
 
 const items = [
   ...bulletins.map((e) => ({ kind: 'bulletins' as const, id: e.id, title: e.data.title, date: e.data.date, text: '', thumb: e.data.images[0] ?? '', pinned: false })),
   ...columns.map((e) => ({ kind: 'columns' as const, id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.cover, pinned: false })),
   ...notices.map((e) => ({ kind: 'notices' as const, id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: e.data.pinned })),
+  ...grace.map((e) => ({ kind: 'grace' as const, id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: false })),
 ].sort((a, b) => b.date.getTime() - a.date.getTime() || b.id.localeCompare(a.id, 'en', { numeric: true }));
 
 const pinned = items.filter((i) => i.pinned);
 ---
 
-<Base title="교회 소식" description="히스토리교회 주보, 목회서신, 공지사항">
-  <PageHero label="교회 소식 · News" title="이번 주 히스토리교회" lead="매주 주보와 담임목사님의 목회서신, 교회의 소식을 한곳에서 확인하세요." />
+<Base title="교회 소식" description="히스토리교회 주보, 목회서신, 공지사항, 은혜나눔">
+  <PageHero label="교회 소식 · News" title="이번 주 히스토리교회" lead="매주 주보와 담임목사님의 목회서신, 교회의 소식과 성도들의 은혜나눔을 한곳에서 확인하세요." />
 
   <section class="section paper">
     <div class="container" data-filter-list data-page="15">

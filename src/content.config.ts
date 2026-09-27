@@ -57,6 +57,17 @@ const notices = defineCollection({
   }),
 });
 
+/** 은혜나눔 — 성도들의 간증 · 묵상 나눔 */
+const grace = defineCollection({
+  loader: md('grace'),
+  schema: z.object({
+    title: z.string(),
+    date: z.coerce.date(),
+    author: text,
+    images: list,
+  }),
+});
+
 /** 교회 앨범 */
 const albums = defineCollection({
   loader: md('albums'),
@@ -68,4 +79,4 @@ const albums = defineCollection({
   }),
 });
 
-export const collections = { sermons, columns, bulletins, notices, albums };
+export const collections = { sermons, columns, bulletins, notices, grace, albums };
