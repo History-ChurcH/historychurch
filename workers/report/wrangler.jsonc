@@ -1,0 +1,19 @@
+// 오류 제보함 워커 — 배포: 이 폴더에서 npx wrangler deploy
+// 설정 파일은 반드시 .jsonc 로 둡니다. (.toml 이면 wrangler 가 저장소 맨 위의 wrangler.jsonc 를 먼저 찾아 본 사이트를 배포해 버립니다.)
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "historychurch-report",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  // 대시보드에서 넣은 값(GITHUB_TOKEN 등)을 다시 배포해도 지우지 않습니다.
+  "keep_vars": true,
+  "vars": {
+    "GITHUB_REPO": "History-ChurcH/historychurch-reports",
+    "ALLOWED_ORIGINS": "https://historychurch.org, https://www.historychurch.org, https://historychurch.soul0691.workers.dev, http://localhost:4321"
+  },
+  // IP 하나당 1분에 5건까지만 받습니다.
+  "ratelimits": [
+    { "name": "REPORT_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }
+  ]
+}

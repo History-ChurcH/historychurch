@@ -1,0 +1,12 @@
+// www → 대표 주소 이동 전용 워커. 한 번 배포하면 손댈 일이 없습니다.
+// 배포: 이 폴더에서 npx wrangler deploy
+// (설정 파일이 .toml 이면 wrangler 가 저장소 맨 위의 wrangler.jsonc(본 사이트)를 먼저 찾으므로 반드시 .jsonc 로 둡니다.)
+{
+  "$schema": "https://unpkg.com/wrangler/config-schema.json",
+  "name": "historychurch-www",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "www.historychurch.org/*", "zone_name": "historychurch.org" }]
+}

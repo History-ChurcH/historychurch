@@ -1,7 +1,7 @@
 # 히스토리교회 홈페이지 (리뉴얼)
 
 기독교대한감리회 히스토리교회 — 말씀의 역사로 믿음의 역사를 쓰는 교회
-기존 사이트: https://historychurch.org · 새 사이트(도메인 연결 전): https://historychurch.soul0691.workers.dev/
+사이트: https://historychurch.org (2026-09-27 새 사이트로 전환) · 예비 주소: https://historychurch.soul0691.workers.dev/
 
 > 글·사진을 올리는 분은 **[운영가이드.md](./운영가이드.md)** 만 보시면 됩니다.
 > 이 문서는 사이트를 관리·설정하는 분을 위한 안내입니다.
@@ -92,14 +92,16 @@ scripts/
 - 워커 주소는 `src/lib/services.ts` 의 `REPORT_ENDPOINT` 에 넣습니다. 비어 있으면 양식 대신 전화·이메일 안내가 보입니다.
 - 워커의 `GITHUB_TOKEN` 은 **제보함 저장소의 Issues 쓰기 권한만** 가진 fine-grained 토큰이어야 하고, Cloudflare 대시보드에 **Secret(암호화)** 으로만 저장합니다.
 
-## Cloudflare Workers (로그인 서버 · 제보함)
+## Cloudflare Workers (www 이동 · 로그인 서버 · 제보함)
 
 | 폴더 | 워커 이름 | 하는 일 | 대시보드에 넣는 Secret |
 | --- | --- | --- | --- |
+| `workers/www-redirect` | historychurch-www | `www.historychurch.org` → `historychurch.org` 301 이동 (배포됨) | 없음 |
 | `workers/cms-auth` | historychurch-cms-auth | 관리자 화면 'GitHub로 로그인' | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET` |
 | `workers/report` | historychurch-report | 오류 제보 → 비공개 저장소 이슈 | `GITHUB_TOKEN` |
 
-배포: 각 폴더에서 `npx wrangler deploy`. `keep_vars = true` 라서 다시 배포해도 대시보드에 넣은 값은 지워지지 않습니다.
+배포: 각 폴더에서 `npx wrangler deploy`. 설정 파일은 반드시 `wrangler.jsonc` 로 둡니다 — `.toml` 이면 wrangler 가 저장소 맨 위의 `wrangler.jsonc`(본 사이트)를 먼저 찾아서 본 사이트를 배포해 버립니다.
+`keep_vars` 가 켜져 있어서 다시 배포해도 대시보드에 넣은 값은 지워지지 않습니다.
 `workers/cms-auth` 는 [sveltia-cms-auth](https://github.com/sveltia/sveltia-cms-auth) (MIT) 를 그대로 가져온 것이니 고치지 말고, 새 버전이 나오면 `src/index.js` 만 바꿔 넣으세요.
 
 ## 설교 자동 업데이트
@@ -144,7 +146,8 @@ scripts/
    - 실행되는 코드 없이 `dist/` 의 파일만 올리는 구성(정적 에셋)이라 방문자 요청은 무료·무제한입니다. Cloudflare 는 새 프로젝트에 Pages 대신 이 방식을 권장합니다.
 3. **저장소를 비공개로** — Settings → General → Danger Zone → *Change visibility* → Private. Cloudflare 는 그대로 빌드합니다.
    (예전 GitHub Pages 미리보기 `history-church.github.io` 는 이때 자동으로 내려갑니다. 배포 작업 파일은 이미 지워 두었습니다.)
-4. **남은 옛 글 가져오기** — 도메인을 바꾸기 전에 실행합니다. (현재는 목회서신 전체, 2026년 주보, 최근 앨범 8개, 공지 4개만 옮겨져 있습니다)
+4. **남은 옛 글 가져오기** — 원래는 도메인을 바꾸기 전에 합니다. (현재 목회서신 전체, 주보 2021-09 ~ 2025-01 과 2026년, 최근 앨범 8개, 공지 4개가 옮겨져 있습니다. 2025년 2~7월 주보 상당수는 옛 서버에서도 사진이 지워져 있어 건너뛰었습니다.)
+   **남은 것: 2025년 8~12월 주보, 옛 앨범.** 도메인이 이미 새 사이트로 바뀌었으므로, SiteGround 를 해지하기 전에 옛 서버 주소(`35.247.160.145`)로 직접 접속해서 가져와야 합니다.
 
    ```bash
    npm install
@@ -152,12 +155,15 @@ scripts/
    ```
 
    사진 용량이 커지므로(앨범 하나에 수 MB) 꼭 필요한 만큼만 가져오기를 권합니다.
-5. **도메인 연결** — Workers 프로젝트 → **Settings → Domains & Routes → Add → Custom domain** → `historychurch.org` 추가, 이어서 `www.historychurch.org` 도 추가.
+5. **도메인 연결 (2026-09-27 완료)** — 지금은 **Worker 경로(route)** 로 연결되어 있습니다: `historychurch.org/*` → `historychurch`, `www.historychurch.org/*` → `historychurch-www`(대표 주소로 301).
+   경로 방식은 DNS 기록(주황 구름, Proxied)이 있어야 동작하므로 `historychurch.org`·`www` 의 `A` 기록을 지우지 마세요. 옛 서버 IP 를 가리키지만 요청은 Cloudflare 에서 끝나서 옛 서버로 가지 않습니다.
+   경로는 `wrangler.jsonc` 에 넣지 않았습니다(자동 빌드용 토큰 권한과 무관하게 유지되도록). 대시보드 **Workers & Pages → historychurch → Settings → Domains & Routes** 에서 볼 수 있습니다.
+   아래는 대시보드에서 **Custom domain** 방식으로 다시 연결할 때의 참고용입니다. Workers 프로젝트 → **Settings → Domains & Routes → Add → Custom domain** → `historychurch.org` 추가.
    이미 옛 서버(SiteGround)를 가리키는 `A` 레코드가 있어서 추가가 거절되면, **DNS → Records** 에서 이름이 `historychurch.org` 와 `www` 인 `A`(또는 `CNAME`) 레코드만 지우고 다시 추가합니다. (`MX`·`TXT` 는 메일용이니 그대로 둡니다. 지우고 다시 추가하는 사이 1~2분 동안만 사이트가 안 열립니다.)
-   연결 뒤 같은 화면에서 `workers.dev` 주소는 꺼 둡니다(검색엔진에 주소가 두 개로 잡히지 않도록). 예전 주소(`/greeting`, `/maps`, `/sermon`, `/history`) 이동은 `public/_redirects` 에 있습니다.
-   `www` → 대표 주소 이동은 파일로는 안 되고(상대 주소만 허용), 대시보드 **historychurch.org → Rules → Redirect Rules → Create rule → 템플릿 "Redirect from WWW to root"** 로 켭니다.
-   이 순간부터 historychurch.org 가 새 사이트를 보여 줍니다.
-6. 새 사이트가 며칠 문제없이 돌면 **SiteGround 를 해지**합니다. (다음 결제일 전에만 하면 됩니다.)
+   `workers.dev` 예비 주소는 켜 두었습니다. 모든 페이지의 대표 주소(canonical)가 historychurch.org 라서 검색엔진에는 한 주소로 잡힙니다. 예전 주소(`/greeting`, `/maps`, `/sermon`, `/history`) 이동은 `public/_redirects` 에 있습니다.
+   `www` → 대표 주소 이동은 `_redirects` 로는 안 되고(상대 주소만 허용) `workers/www-redirect` 워커가 맡습니다.
+   **http → https 강제 이동**: 대시보드 **historychurch.org → SSL/TLS → Edge Certificates → Always Use HTTPS** 를 켭니다. (`_headers` 의 HSTS 는 한 번 https 로 들어온 브라우저에만 적용됩니다.)
+6. 남은 옛 글을 가져오고 새 사이트가 며칠 문제없이 돌면 **SiteGround 를 해지**합니다. (다음 결제일 전에만 하면 됩니다.)
 
 > 다른 호스팅으로 옮길 때: `public/_redirects` 와 `public/_headers` 는 Cloudflare(및 Netlify) 전용입니다. 그 밖의 호스팅에서는 `astro.config.mjs` 의 `redirects` 가 예전 주소 이동을 대신합니다.
 
