@@ -206,6 +206,11 @@ async function importBulletins() {
       if (local) images.push(local);
     }
     const text = toMarkdown(html.replace(/<img[^>]*>/gi, ''));
+    // 2025년 2~7월 등 일부 주보는 옛 서버에서도 사진 파일이 지워져 있습니다. 빈 글은 만들지 않습니다.
+    if (!images.length && !text.trim()) {
+      console.warn(`  ! ${date} 주보: 옛 서버에 사진 파일이 없어 건너뜁니다`);
+      continue;
+    }
     await writeEntry('bulletins', id, { title: decode(p.title.rendered), date, images, file: '' }, text);
     process.stdout.write('.');
   }

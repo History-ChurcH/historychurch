@@ -153,7 +153,8 @@ scripts/
 
    사진 용량이 커지므로(앨범 하나에 수 MB) 꼭 필요한 만큼만 가져오기를 권합니다.
 5. **도메인 연결** — Workers 프로젝트 → **Settings → Domains & Routes → Add → Custom domain** → `historychurch.org` 추가, 이어서 `www.historychurch.org` 도 추가.
-   DNS 레코드는 Cloudflare 가 자동으로 바꿉니다. 연결 뒤 같은 화면에서 `workers.dev` 주소는 꺼 둡니다(검색엔진에 주소가 두 개로 잡히지 않도록). 예전 주소(`/greeting`, `/maps`, `/sermon`, `/history`) 이동은 `public/_redirects` 에 있습니다.
+   이미 옛 서버(SiteGround)를 가리키는 `A` 레코드가 있어서 추가가 거절되면, **DNS → Records** 에서 이름이 `historychurch.org` 와 `www` 인 `A`(또는 `CNAME`) 레코드만 지우고 다시 추가합니다. (`MX`·`TXT` 는 메일용이니 그대로 둡니다. 지우고 다시 추가하는 사이 1~2분 동안만 사이트가 안 열립니다.)
+   연결 뒤 같은 화면에서 `workers.dev` 주소는 꺼 둡니다(검색엔진에 주소가 두 개로 잡히지 않도록). 예전 주소(`/greeting`, `/maps`, `/sermon`, `/history`) 이동은 `public/_redirects` 에 있습니다.
    `www` → 대표 주소 이동은 파일로는 안 되고(상대 주소만 허용), 대시보드 **historychurch.org → Rules → Redirect Rules → Create rule → 템플릿 "Redirect from WWW to root"** 로 켭니다.
    이 순간부터 historychurch.org 가 새 사이트를 보여 줍니다.
 6. 새 사이트가 며칠 문제없이 돌면 **SiteGround 를 해지**합니다. (다음 결제일 전에만 하면 됩니다.)
