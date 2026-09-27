@@ -15,7 +15,7 @@ const { Content } = await render(album);
 const hasBody = Boolean(album.body?.trim());
 ---
 
-<Base title={title} description={excerpt(album.body, 140) || `${title} — 히스토리교회 앨범`} image={cover || photos[0]}>
+<Base title={title} description={excerpt(album.body, 140) || `${title} — 히스토리교회 앨범`}>
   <section class="album-hero dark">
     <div class="container">
       <a class="back" href={href('/album/')}>← 앨범 목록</a>

@@ -36,7 +36,7 @@ const file: string = data.file ?? '';
 const isColumn = kind === 'columns';
 ---
 
-<Base title={entry.data.title} description={excerpt(entry.body, 140) || `${LABEL[kind]} · ${entry.data.title}`} image={cover || images[0]}>
+<Base title={entry.data.title} description={excerpt(entry.body, 140) || `${LABEL[kind]} · ${entry.data.title}`}>
   <section class="post-hero dark">
     <div class="container narrow">
       <a class="back" href={href(`/news/#${encodeURIComponent(LABEL[kind])}`)}>← {LABEL[kind]} 목록</a>

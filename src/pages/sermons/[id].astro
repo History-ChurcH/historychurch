@@ -4,7 +4,7 @@ import Base from '../../layouts/Base.astro';
 import CrossMark from '../../components/CrossMark.astro';
 import VideoPlayer from '../../components/VideoPlayer.astro';
 import SermonCard from '../../components/SermonCard.astro';
-import { byDateDesc, href, longDate, ytThumb } from '../../lib/utils';
+import { byDateDesc, href, longDate } from '../../lib/utils';
 
 export async function getStaticPaths() {
   const sermons = (await getCollection('sermons')).sort(byDateDesc);
@@ -20,7 +20,7 @@ const { Content } = await render(sermon);
 const hasBody = Boolean(sermon.body?.trim());
 ---
 
-<Base title={title} description={[category, scripture, summary].filter(Boolean).join(' · ')} image={ytThumb(youtube)}>
+<Base title={title} description={[category, scripture, summary].filter(Boolean).join(' · ')}>
   <section class="sermon-hero darker">
     <div class="container sermon-hero__inner">
       <a class="back" href={href('/sermons/')}>← 설교 목록</a>
