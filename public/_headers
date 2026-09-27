@@ -5,3 +5,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
   Strict-Transport-Security: max-age=31536000
+
+# 관리자 화면은 검색에 나오지 않게
+/admin/*
+  X-Robots-Tag: noindex, nofollow
