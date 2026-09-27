@@ -10,11 +10,14 @@
  *   --bulletins-since=YYYY-MM-DD               이 날짜 이후 주보만 (기본: 2026-01-01)
  *   --albums=N                                  최근 앨범 N개만 (기본: 8)
  *   --notices-since=YYYY-MM-DD                 이 날짜 이후 교회 소식만 (기본: 2022-01-01)
+ *   --origin=35.247.160.145                     도메인이 새 사이트로 바뀐 뒤, 옛 서버(SiteGround)에 주소로 직접 접속
+ *   --dry-run                                   내려받지 않고 앨범·사진 개수만 셉니다
  *
  * 이미 있는 파일은 건너뜁니다. 사진은 WebP 로 줄여서 저장합니다.
  */
 import { mkdir, writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
+import dns from 'node:dns';
 import sharp from 'sharp';
 
 const WP = 'https://historychurch.org';
@@ -34,6 +37,20 @@ const albumLimit = Number(args.albums || 8);
 const noticesSince = args['notices-since'] || '2022-01-01';
 
 const CATEGORY = { bulletins: 8, columns: 10, albums: 14 };
+const dryRun = args['dry-run'] === 'true';
+
+// historychurch.org 가 이미 새 사이트를 가리키므로, 옛 워드프레스는 서버 주소로 직접 찾아갑니다.
+if (args.origin) {
+  const host = new URL(WP).hostname;
+  const lookup = dns.lookup;
+  dns.lookup = function (name, opts, cb) {
+    if (typeof opts === 'function') [cb, opts] = [opts, {}];
+    if (name !== host) return lookup.call(this, name, opts, cb);
+    const family = args.origin.includes(':') ? 6 : 4;
+    return opts?.all ? process.nextTick(cb, null, [{ address: args.origin, family }]) : process.nextTick(cb, null, args.origin, family);
+  };
+  console.log(`옛 서버 ${args.origin} 에 직접 접속합니다.`);
+}
 
 // ---------------------------------------------------------------------------
 // 도우미
@@ -118,7 +135,13 @@ async function saveImage(url, folder, name, maxSize = 1600) {
       return null;
     }
   }
-  await sharp(buf).rotate().resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 76 }).toFile(file);
+  try {
+    // 끝이 잘린 사진 파일도 읽을 수 있는 만큼 살립니다(failOn: 'none').
+    await sharp(buf, { failOn: 'none' }).rotate().resize(maxSize, maxSize, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 76 }).toFile(file);
+  } catch (err) {
+    console.warn(`  ! 사진 파일이 손상되어 건너뜁니다: ${url} (${err.message})`);
+    return null;
+  }
   return publicPath;
 }
 
@@ -266,6 +289,13 @@ async function importAlbums() {
   const srcsOf = (a) => [...imgSrcs(a.html), ...a.extra];
   const all = [...kb, ...wp].filter((a) => srcsOf(a).length > 0).sort((a, b) => b.date.localeCompare(a.date)).slice(0, albumLimit);
   console.log(`앨범 ${all.length}개`);
+  if (dryRun) {
+    const byYear = {};
+    for (const a of all) (byYear[a.date.slice(0, 4)] ??= [0, 0]), (byYear[a.date.slice(0, 4)][0] += 1), (byYear[a.date.slice(0, 4)][1] += srcsOf(a).length);
+    for (const [y, [n, p]] of Object.entries(byYear).sort()) console.log(`  ${y}년: 앨범 ${n}개, 사진 ${p}장`);
+    console.log(`  합계 사진 ${all.reduce((t, a) => t + srcsOf(a).length, 0)}장`);
+    return;
+  }
   const slug = uniqueSlugger();
   for (const a of all) {
     const id = slug(a.date);
