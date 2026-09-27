@@ -89,10 +89,32 @@ async function existingVideos() {
   return { ids, names };
 }
 
+/**
+ * 유튜브 RSS 는 가끔 몇 시간씩 404/500 을 돌려줍니다(유튜브 쪽 문제).
+ * 몇 번 다시 시도하고, 그래도 안 되면 null — 다음 시간에 다시 확인하면 되므로 실패로 치지 않습니다.
+ */
+async function fetchFeed(tries = 4) {
+  let last = '';
+  for (let i = 1; i <= tries; i++) {
+    try {
+      const res = await fetch(FEED, { headers: { 'user-agent': 'historychurch-sermon-sync' } });
+      if (res.ok) return await res.text();
+      last = `HTTP ${res.status}`;
+    } catch (err) {
+      last = err instanceof Error ? err.message : String(err);
+    }
+    if (i < tries) await new Promise((r) => setTimeout(r, 10_000 * i));
+  }
+  console.log(`::warning::YouTube 피드가 응답하지 않아 이번에는 건너뜁니다 (${last}). 다음 예약 시간에 다시 확인합니다.`);
+  return null;
+}
+
 async function main() {
-  const res = await fetch(FEED, { headers: { 'user-agent': 'historychurch-sermon-sync' } });
-  if (!res.ok) throw new Error(`YouTube 피드를 불러오지 못했습니다: ${res.status}`);
-  const xml = await res.text();
+  const xml = await fetchFeed();
+  if (xml === null) {
+    if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, 'changed=false\ncount=0\n');
+    return;
+  }
   const entries = xml.split('<entry>').slice(1);
 
   const { ids, names } = await existingVideos();
