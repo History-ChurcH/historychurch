@@ -185,5 +185,5 @@ npm run sync:sermons # 유튜브에서 새 설교 가져오기
 
 - 색·글꼴·간격: `src/styles/global.css` 맨 위의 `:root` 변수
 - 로고: `src/lib/logo-paths.ts` (기존 로고 PNG 를 그대로 벡터로 옮긴 것 — 모양을 바꾸지 마세요), 원본 PNG 는 `public/images/`
-- 링크 미리보기 배너(카카오톡 등): 원본 `design/og-banner.html` → `public/images/og-banner.jpg` (1200×630). 만드는 법은 그 파일 맨 위에 있습니다.
+- 링크 미리보기 배너(카카오톡 등): 원본 `design/og-banner.html` → `public/images/og-banner.jpg` (1200×630). 만드는 법은 그 파일 맨 위에 있습니다. 카카오톡에 옛 그림이 계속 보이면 [카카오 공유 디버거](https://developers.kakao.com/tool/debugger/sharing)에서 캐시를 지웁니다.
 - 글꼴: 본문 Pretendard, 성경 구절·표어 Noto Serif KR, 로고 글자 Black Han Sans (`src/layouts/Base.astro`)

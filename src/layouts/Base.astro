@@ -14,7 +14,8 @@ interface Props {
 const { title, description = `${site.denomination} ${site.name} — ${site.tagline}`, image } = Astro.props;
 const fullTitle = title ? `${title} | ${site.name}` : `${site.name} | ${site.tagline}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
-// 링크 미리보기 기본 배너 — 원본은 design/og-banner.html (파일 이름을 바꾸면 카카오톡 등의 옛 미리보기 캐시도 새로 받습니다)
+// 링크 미리보기 기본 배너 — 원본은 design/og-banner.html
+// 카카오톡은 주소별로 미리보기를 한동안 저장합니다. 바꾼 배너를 바로 보려면 https://developers.kakao.com/tool/debugger/sharing 에서 주소를 넣고 캐시를 지웁니다.
 const DEFAULT_OG = '/images/og-banner.jpg';
 const ogImage = new URL(image?.startsWith('http') ? image : href(image ?? DEFAULT_OG), Astro.site);
 // GitHub Pages 미리보기 주소는 검색엔진에 노출하지 않습니다 (실제 도메인 연결 후 자동으로 풀립니다).
