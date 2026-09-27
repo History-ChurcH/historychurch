@@ -1,4 +1,4 @@
-# Cloudflare Pages 보안 헤더
+# Cloudflare 보안 헤더
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: SAMEORIGIN

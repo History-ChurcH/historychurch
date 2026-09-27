@@ -1,4 +1,6 @@
-# Cloudflare Pages 리다이렉트 (다른 호스팅에서는 astro.config.mjs 의 redirects 가 같은 일을 합니다)
+# Cloudflare 리다이렉트 (다른 호스팅에서는 astro.config.mjs 의 redirects 가 같은 일을 합니다)
+# 여기에는 같은 사이트 안의 상대 주소만 쓸 수 있습니다.
+# www → 대표 주소 이동은 Cloudflare 대시보드의 Rules → Redirect Rules 에서 설정합니다 (README 참고).
 
 # 예전 워드프레스 주소 → 새 주소
 /greeting    /about/#greeting     301
@@ -9,6 +11,3 @@
 /sermon/     /sermons/            301
 /history     /news/               301
 /history/    /news/               301
-
-# www → 대표 주소
-https://www.historychurch.org/*   https://historychurch.org/:splat   301
