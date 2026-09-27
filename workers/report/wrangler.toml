@@ -8,7 +8,7 @@ keep_vars = true
 
 [vars]
 GITHUB_REPO = "History-ChurcH/historychurch-reports"
-ALLOWED_ORIGINS = "https://history-church.github.io, https://historychurch.org, https://www.historychurch.org, http://localhost:4321"
+ALLOWED_ORIGINS = "https://historychurch.soul0691.workers.dev, https://historychurch.org, https://www.historychurch.org, http://localhost:4321"
 
 # IP 하나당 1분에 5건까지만 받습니다.
 [[ratelimits]]

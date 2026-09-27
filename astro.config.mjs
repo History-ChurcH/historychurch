@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // GitHub Actions 에서 SITE / BASE_PATH 를 넣어 줍니다.
-// - GitHub Pages 미리보기: SITE=https://history-church.github.io, BASE_PATH=/historychurch
+// - 하위 경로에 올릴 때(예: GitHub Pages): SITE=https://<계정>.github.io, BASE_PATH=/<저장소>
 // - 실제 도메인 연결 후:    SITE=https://historychurch.org,   BASE_PATH=(비움)
 const site = process.env.SITE || 'https://historychurch.org';
 const base = process.env.BASE_PATH || '/';

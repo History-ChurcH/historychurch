@@ -1,7 +1,7 @@
 # 히스토리교회 홈페이지 (리뉴얼)
 
 기독교대한감리회 히스토리교회 — 말씀의 역사로 믿음의 역사를 쓰는 교회
-기존 사이트: https://historychurch.org · 새 사이트 미리보기: https://history-church.github.io/historychurch/
+기존 사이트: https://historychurch.org · 새 사이트(도메인 연결 전): https://historychurch.soul0691.workers.dev/
 
 > 글·사진을 올리는 분은 **[운영가이드.md](./운영가이드.md)** 만 보시면 됩니다.
 > 이 문서는 사이트를 관리·설정하는 분을 위한 안내입니다.
@@ -21,7 +21,6 @@
 - **[Astro](https://astro.build)** — 정적 사이트 생성기. 글은 `src/content/` 의 마크다운 파일입니다.
 - **[Sveltia CMS](https://sveltiacms.app)** — `/admin` 관리자 화면. 저장하면 이 저장소에 커밋됩니다.
 - **Cloudflare** — `main` 에 커밋될 때마다 자동으로 빌드·배포합니다 (무료, 비공개 저장소 가능). 아래 "실제 도메인" 절 참고.
-  도메인을 연결하기 전까지는 GitHub Pages 미리보기(`.github/workflows/deploy.yml`)도 함께 동작합니다.
 - **설교 자동 동기화** — 매시간 유튜브 RSS 를 확인합니다 (`.github/workflows/sync-sermons.yml`, `scripts/sync-sermons.mjs`).
 
 ```
@@ -51,7 +50,6 @@ scripts/
 ### 1) 호스팅 연결
 
 실제 서비스는 Cloudflare(Workers 정적 에셋) 입니다 — 아래 "실제 도메인(historychurch.org)으로 옮기기" 절을 따릅니다.
-미리보기용 GitHub Pages 는 **Settings → Pages → Source: GitHub Actions** 로 켭니다 (저장소가 공개일 때만 동작).
 
 ### 2) 관리자 로그인 설정
 
@@ -142,10 +140,10 @@ scripts/
    | Variables | 없음 |
 
    - 환경 변수는 필요 없습니다. `SITE` 기본값이 `https://historychurch.org` 이고 Node 버전은 `.node-version` 에서 읽습니다.
-   - Deploy 를 누르면 1~2분 뒤 `https://historychurch.<계정이름>.workers.dev` 에서 확인할 수 있습니다. 이후 `main` 에 커밋될 때마다(설교 자동 동기화 포함) 자동으로 다시 빌드됩니다.
+   - Deploy 를 누르면 1~2분 뒤 `https://historychurch.soul0691.workers.dev` 에서 확인할 수 있습니다. 이후 `main` 에 커밋될 때마다(설교 자동 동기화 포함) 자동으로 다시 빌드됩니다.
    - 실행되는 코드 없이 `dist/` 의 파일만 올리는 구성(정적 에셋)이라 방문자 요청은 무료·무제한입니다. Cloudflare 는 새 프로젝트에 Pages 대신 이 방식을 권장합니다.
-3. **저장소를 비공개로** — Settings → General → Danger Zone → *Change visibility* → Private. Cloudflare 는 그대로 빌드하고, GitHub Pages 미리보기만 내려갑니다.
-   이때 `.github/workflows/deploy.yml` 과 `sync-sermons.yml` 의 `gh workflow run deploy.yml` 줄을 지웁니다 (더 이상 필요 없음).
+3. **저장소를 비공개로** — Settings → General → Danger Zone → *Change visibility* → Private. Cloudflare 는 그대로 빌드합니다.
+   (예전 GitHub Pages 미리보기 `history-church.github.io` 는 이때 자동으로 내려갑니다. 배포 작업 파일은 이미 지워 두었습니다.)
 4. **남은 옛 글 가져오기** — 도메인을 바꾸기 전에 실행합니다. (현재는 목회서신 전체, 2026년 주보, 최근 앨범 8개, 공지 4개만 옮겨져 있습니다)
 
    ```bash
@@ -157,7 +155,7 @@ scripts/
 5. **도메인 연결** — Workers 프로젝트 → **Settings → Domains & Routes → Add → Custom domain** → `historychurch.org` 추가, 이어서 `www.historychurch.org` 도 추가.
    DNS 레코드는 Cloudflare 가 자동으로 바꿉니다. 연결 뒤 같은 화면에서 `workers.dev` 주소는 꺼 둡니다(검색엔진에 주소가 두 개로 잡히지 않도록). 예전 주소(`/greeting`, `/maps`, `/sermon`, `/history`) 이동은 `public/_redirects` 에 있습니다.
    `www` → 대표 주소 이동은 파일로는 안 되고(상대 주소만 허용), 대시보드 **historychurch.org → Rules → Redirect Rules → Create rule → 템플릿 "Redirect from WWW to root"** 로 켭니다.
-   이 순간부터 historychurch.org 가 새 사이트를 보여 주고, 미리보기에서 막아 두었던 검색엔진 노출(`noindex`)도 풀립니다.
+   이 순간부터 historychurch.org 가 새 사이트를 보여 줍니다.
 6. 새 사이트가 며칠 문제없이 돌면 **SiteGround 를 해지**합니다. (다음 결제일 전에만 하면 됩니다.)
 
 > 다른 호스팅으로 옮길 때: `public/_redirects` 와 `public/_headers` 는 Cloudflare(및 Netlify) 전용입니다. 그 밖의 호스팅에서는 `astro.config.mjs` 의 `redirects` 가 예전 주소 이동을 대신합니다.

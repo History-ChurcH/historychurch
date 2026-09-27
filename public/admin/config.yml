@@ -17,7 +17,7 @@ backend:
   # 'GitHub로 로그인' 버튼을 쓰려면 README 의 "관리자 로그인 설정"을 따라 base_url 을 넣고 oauth 를 추가하세요.
   auth_methods: [token]
   # 저장소가 공개라서, 로그인할 때 개인 비공개 저장소 권한까지 달라고 하지 않도록 범위를 좁힙니다.
-  auth_scope: public_repo
+  auth_scope: repo # 비공개 저장소라서 repo 권한이 필요합니다
   commit_messages:
     create: '[{{collection}}] 새 글: {{slug}}'
     update: '[{{collection}}] 수정: {{slug}}'

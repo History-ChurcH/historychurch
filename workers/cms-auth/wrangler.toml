@@ -9,4 +9,4 @@ keep_vars = true
 
 [vars]
 # 이 주소의 관리자 화면에서만 로그인 토큰을 받을 수 있습니다. (다른 사이트가 이 서버를 악용하지 못하게 막음)
-ALLOWED_DOMAINS = "history-church.github.io, historychurch.org, www.historychurch.org"
+ALLOWED_DOMAINS = "historychurch.soul0691.workers.dev, historychurch.org, www.historychurch.org"

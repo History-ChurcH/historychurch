@@ -1,5 +1,5 @@
 # 히스토리교회 유튜브 채널에 새 예배 영상이 올라왔는지 매시간 확인합니다.
-# 새 영상이 있으면 설교 글을 자동으로 만들고, 사이트를 다시 배포합니다.
+# 새 영상이 있으면 설교 글을 자동으로 만들어 커밋합니다. 커밋되면 Cloudflare 가 사이트를 다시 배포합니다.
 # → 홈 화면의 '이번 주 설교'가 따로 손대지 않아도 매주 바뀝니다.
 name: 설교 영상 자동 가져오기
 
@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 concurrency:
   group: sync-sermons
@@ -29,15 +28,11 @@ jobs:
       - id: sync
         run: node scripts/sync-sermons.mjs
 
-      - name: 새 설교 저장 후 사이트 다시 배포
+      - name: 새 설교 저장
         if: steps.sync.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/content/sermons
           git commit -m "설교 영상 ${{ steps.sync.outputs.count }}개 자동 추가"
           git push
-          # GITHUB_TOKEN 으로 만든 커밋은 배포를 자동으로 깨우지 않으므로 직접 실행합니다.
-          gh workflow run deploy.yml --ref main
