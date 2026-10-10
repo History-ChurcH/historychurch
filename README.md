@@ -3,7 +3,7 @@
 기독교대한감리회 히스토리교회 — 말씀의 역사로 믿음의 역사를 쓰는 교회
 사이트: https://historychurch.org (2026-09-27 새 사이트로 전환) · 예비 주소: https://historychurch.soul0691.workers.dev/
 
-> 글·사진을 올리는 분은 **[운영가이드.md](./운영가이드.md)** 만 보시면 됩니다.
+> 글·사진을 올리는 분은 **[운영가이드.md](./운영가이드.md)**(관리자 화면) 또는 **[업로드_가이드.md](./업로드_가이드.md)**(GitHub 에 파일만 올리기)를 보시면 됩니다.
 > 이 문서는 사이트를 관리·설정하는 분을 위한 안내입니다.
 
 ## 무엇이 바뀌었나
@@ -29,9 +29,12 @@ src/
     sermons/     설교 (유튜브에서 자동 생성 + CMS 에서 수정)
     bulletins/   주보
     columns/     목회서신
-    notices/     공지 · 교회 소식
-    grace/       은혜나눔 (성도들의 간증 · 묵상)
+    notices/     공지 · 교회 소식 (홈 화면에는 고정 + 최근 30일 공지만 3개까지)
+    grace/       은혜나눔 (성도들의 간증 · 묵상) — 게시판에 함께 보임
+    posts/       게시판 (공지·주보·목회서신이 아닌 일반 글)
+    videos/      영상 (설교 외 유튜브 영상)
     albums/      앨범
+    */_템플릿.md 복사해서 쓰는 견본. 이름이 _ 로 시작하는 파일은 사이트에서 제외
   data/
     site.json    교회 기본 정보 · 예배 시간 · 헌금 계좌 · 표어
     about.json   교회 소개 · 비전 · 담임목사 인사말
@@ -41,9 +44,11 @@ src/
 public/
   admin/         관리자 화면 (config.yml 에 메뉴 구성)
   uploads/       CMS 로 올린 사진·파일
+    bulletins/   주보. 날짜 이름(2026-10-11-1.jpg, 2026-10-11.pdf)으로 올리면 .md 없이도 주보가 됨
 scripts/
   sync-sermons.mjs      유튜브 → 설교 글 자동 생성
   import-wordpress.mjs  기존 워드프레스 글·사진 가져오기
+  optimize-uploads.mjs  GitHub 웹으로 올린 400KB 넘는 jpg·png → WebP (.github/workflows/optimize-uploads.yml)
 ```
 
 ## 처음 설정 (한 번만)
@@ -82,6 +87,16 @@ scripts/
      base_url: https://<워커 주소>
      auth_methods: [oauth, token]
    ```
+
+## 파일만 올려서 글 쓰기 (GitHub 웹)
+
+관리자 화면 없이 GitHub 웹에서 파일을 올려도 됩니다. 봉사자 안내는 [업로드_가이드.md](./업로드_가이드.md).
+
+- 글 상단에 `date` 가 없으면 파일 이름 앞의 날짜를 씁니다 (`src/content.config.ts` 의 `md()`).
+- `_` 로 시작하는 파일은 사이트에서 빠집니다. 관리자 화면에서는 제목이 `[템플릿]` 으로 시작하는 글을 숨깁니다 (`config.yml` 의 `filter`).
+- 주보는 `src/lib/bulletin-loader.ts` 가 `public/uploads/bulletins/` 의 날짜 이름 파일을 날짜별로 묶어 만듭니다. 같은 날짜의 `.md` 가 있으면 `.md` 가 우선입니다. (파일만 올린 주보는 관리자 화면 목록에는 나오지 않습니다)
+- 큰 사진은 `optimize-uploads.yml` 이 WebP 로 줄여 다시 커밋합니다. 이미 400KB 이하인 파일은 그대로 둡니다.
+- 카테고리 목록: `/news/bulletins/` · `/news/columns/` · `/news/notices/` · `/news/posts/`(은혜나눔 + 게시판), 영상: `/videos/`
 
 ## 오류 제보함
 
