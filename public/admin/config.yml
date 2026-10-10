@@ -79,8 +79,9 @@ collections:
     label: 주보
     label_singular: 주보
     icon: article
-    description: 매주 주보 이미지를 올려 주세요. 이미지 여러 장을 한 번에 끌어다 놓을 수 있습니다.
+    description: 매주 주보 이미지를 올려 주세요. 이미지 여러 장을 한 번에 끌어다 놓을 수 있습니다. (GitHub 에 날짜 이름의 파일만 올린 주보는 여기 목록에 나오지 않지만 홈페이지에는 보입니다)
     folder: /src/content/bulletins
+    filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/bulletins/{{filename}}/'
     create: true
     slug: '{{fields.date}}'
@@ -105,6 +106,7 @@ collections:
     icon: edit_note
     description: 담임목사님의 목회서신(칼럼)입니다. 글을 붙여 넣고 저장하면 1~2분 뒤 홈페이지에 올라갑니다.
     folder: /src/content/columns
+    filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/columns/{{filename}}/'
     create: true
     slug: '{{fields.date}}'
@@ -127,8 +129,9 @@ collections:
     label: 공지 · 소식
     label_singular: 공지
     icon: campaign
-    description: 행사 안내, 일정표, 순서지 같은 교회 소식입니다. '맨 위에 고정'을 켜면 소식 페이지 맨 위에 보입니다.
+    description: 행사 안내, 일정표, 순서지 같은 교회 소식입니다. 홈 화면에는 최근 30일 안의 공지가 보이고, '맨 위에 고정'을 켜면 기간과 상관없이 홈 화면과 공지 게시판 맨 위에 보입니다.
     folder: /src/content/notices
+    filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/notices/{{filename}}/'
     create: true
     slug: '{{fields.date}}'
@@ -153,6 +156,7 @@ collections:
     icon: volunteer_activism
     description: 성도들의 간증과 묵상 나눔입니다. 받은 글을 대신 올릴 때는 글쓴이 칸에 이름을 적어 주세요.
     folder: /src/content/grace
+    filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/grace/{{filename}}/'
     create: true
     slug: '{{fields.date}}'
@@ -169,6 +173,54 @@ collections:
       - { name: author, label: 글쓴이 (선택), widget: string, required: false }
       - { name: images, label: 이미지 (선택), widget: image, multiple: true, required: false }
       - { name: body, label: 내용, widget: markdown, required: false }
+
+  # ───────────────────────── 게시판 ─────────────────────────
+  - name: posts
+    label: 게시판
+    label_singular: 게시판 글
+    icon: forum
+    description: 공지·주보·목회서신이 아닌 글(사역 이야기, 행사 후기 등)입니다. 은혜나눔 글과 함께 게시판에 보입니다.
+    folder: /src/content/posts
+    filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
+    preview_path: 'news/posts/{{filename}}/'
+    create: true
+    slug: '{{fields.date}}'
+    summary: '{{date}} · {{title}}'
+    sortable_fields:
+      fields: [date, title]
+      default: { field: date, direction: descending }
+    media_folder: '{{media_folder}}/posts'
+    public_folder: '{{public_folder}}/posts'
+    editor: { preview: false }
+    fields:
+      - { name: title, label: 제목, widget: string }
+      - { name: date, label: 날짜, widget: datetime, type: date, default: '{{now}}' }
+      - { name: category, label: 분류 (선택), widget: string, required: false, hint: '예) 사역 이야기, 행사 후기. 비워 두면 ‘게시판’으로 보입니다.' }
+      - { name: author, label: 글쓴이 (선택), widget: string, required: false }
+      - { name: images, label: 이미지 (선택), widget: image, multiple: true, required: false }
+      - { name: body, label: 내용, widget: markdown, required: false }
+
+  # ───────────────────────── 영상 ─────────────────────────
+  - name: videos
+    label: 영상
+    label_singular: 영상
+    icon: smart_display
+    description: 찬양·행사·간증처럼 설교가 아닌 영상입니다. 유튜브에 올린 뒤 주소만 붙여 넣으세요. (예배 설교는 자동으로 올라오니 '설교' 메뉴를 쓰세요)
+    folder: /src/content/videos
+    filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
+    preview_path: 'videos/{{filename}}/'
+    create: true
+    slug: '{{fields.date}}-{{uuid_shorter}}'
+    summary: '{{date}} · {{title}}'
+    sortable_fields:
+      fields: [date, title]
+      default: { field: date, direction: descending }
+    editor: { preview: false }
+    fields:
+      - { name: title, label: 영상 제목, widget: string }
+      - { name: date, label: 날짜, widget: datetime, type: date, default: '{{now}}' }
+      - { name: youtube, label: 유튜브 영상 주소, widget: string, hint: '유튜브 주소(https://youtu.be/… 또는 https://www.youtube.com/watch?v=…)를 그대로 붙여 넣으세요.' }
+      - { name: body, label: 설명 (선택), widget: markdown, required: false }
 
   # ───────────────────────── 앨범 ─────────────────────────
   - name: albums
