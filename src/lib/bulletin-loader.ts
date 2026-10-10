@@ -1,16 +1,15 @@
 import { readdir } from 'node:fs/promises';
 import type { Loader } from 'astro/loaders';
-
-/** 주보 폴더에 올린 파일 이름 → 날짜. 예) 2026-10-11-1.jpg, 2026.10.11.pdf, 20261011_앞면.png */
-const FILE = /^(\d{4})[-.]?(\d{2})[-.]?(\d{2})(.*)\.(jpe?g|png|webp|gif|pdf)$/i;
+import { BULLETIN_DROP, BULLETIN_FILE as FILE, BULLETIN_PUBLIC, BULLETIN_URL } from './bulletin-files.mjs';
 
 /**
  * 주보 — 마크다운 글에 더해, 폴더에 이미지·PDF 파일만 올린 주보도 읽습니다.
  *
- * `public/uploads/bulletins/` 에 날짜로 시작하는 파일을 올리면, 같은 날짜끼리 묶어 주보 한 개가 됩니다.
- * 이미 그 날짜의 마크다운 글(관리자 화면에서 만든 주보)이 있으면 마크다운 글을 씁니다.
+ * 저장소 맨 위 `주보/` 폴더(또는 예전 자리 `public/uploads/bulletins/`)에 날짜로 시작하는 파일을 올리면,
+ * 같은 날짜끼리 묶어 주보 한 개가 됩니다. 이미 그 날짜의 마크다운 글(관리자 화면에서 만든 주보)이 있으면 마크다운 글을 씁니다.
+ * 두 폴더의 파일 모두 홈페이지에서는 /uploads/bulletins/파일이름 으로 보입니다. (`주보/` 는 빌드할 때 복사 — astro.config.mjs)
  */
-export function bulletinLoader(markdown: Loader, folder = 'public/uploads/bulletins', publicPath = '/uploads/bulletins'): Loader {
+export function bulletinLoader(markdown: Loader, folders = [BULLETIN_DROP, BULLETIN_PUBLIC], publicPath = BULLETIN_URL): Loader {
   return {
     name: 'bulletins-with-files',
     async load(context) {
@@ -23,15 +22,17 @@ export function bulletinLoader(markdown: Loader, folder = 'public/uploads/bullet
         taken.add(data.date.toISOString().slice(0, 10));
       }
 
-      let names: string[] = [];
-      try {
-        names = await readdir(new URL(`${folder}/`, context.config.root));
-      } catch {
-        return;
+      const names = new Set<string>();
+      for (const folder of folders) {
+        try {
+          for (const name of await readdir(new URL(`${encodeURI(folder)}/`, context.config.root))) names.add(name);
+        } catch {
+          // 폴더가 없으면 건너뜁니다.
+        }
       }
 
       const groups = new Map<string, { images: string[]; pdf: string }>();
-      for (const name of names.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))) {
+      for (const name of [...names].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))) {
         const m = name.match(FILE);
         if (!m) continue;
         const day = `${m[1]}-${m[2]}-${m[3]}`;

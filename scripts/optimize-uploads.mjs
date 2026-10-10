@@ -2,7 +2,7 @@
 /**
  * GitHub 웹에서 올린 큰 사진(jpg·png)을 홈페이지용 WebP 로 줄입니다.
  *
- *  - public/uploads 아래의 400KB 넘는 .jpg / .jpeg / .png 파일을 찾아 가로·세로 2000px 이하, WebP(품질 82)로 바꿉니다.
+ *  - public/uploads 와 맨 위 '주보' 폴더의 400KB 넘는 .jpg / .jpeg / .png 파일을 찾아 가로·세로 2000px 이하, WebP(품질 82)로 바꿉니다.
  *    (관리자 화면이 사진을 올릴 때 하는 것과 같은 설정입니다. 이미 작은 파일은 그대로 둡니다)
  *  - 원본 파일은 지우고, 글(src/content, src/data)에 적힌 사진 주소도 새 이름(.webp)으로 바꿔 줍니다.
  *  - 주보처럼 파일 이름의 날짜·번호(2026-10-11-1.jpg → 2026-10-11-1.webp)는 그대로 유지됩니다.
@@ -14,7 +14,7 @@ import { join, relative, sep } from 'node:path';
 import sharp from 'sharp';
 
 const ROOT = join(import.meta.dirname, '..');
-const UPLOADS = join(ROOT, 'public', 'uploads');
+const UPLOADS = [join(ROOT, 'public', 'uploads'), join(ROOT, '주보')];
 const TEXT_DIRS = [join(ROOT, 'src', 'content'), join(ROOT, 'src', 'data')];
 const RASTER = /\.(jpe?g|png)$/i;
 const MIN_BYTES = 400 * 1024;
@@ -28,12 +28,16 @@ async function* walk(dir) {
   }
 }
 
-const toUrl = (file) => '/' + relative(join(ROOT, 'public'), file).split(sep).join('/');
+// '주보' 폴더의 파일은 홈페이지에서 /uploads/bulletins/… 로 보입니다 (astro.config.mjs 참고)
+const toUrl = (file) =>
+  file.startsWith(join(ROOT, '주보') + sep)
+    ? '/uploads/bulletins/' + relative(join(ROOT, '주보'), file).split(sep).join('/')
+    : '/' + relative(join(ROOT, 'public'), file).split(sep).join('/');
 
 const renamed = new Map(); // 옛 주소 → 새 주소
 let savedBytes = 0;
 
-for await (const file of walk(UPLOADS)) {
+for (const dir of UPLOADS) for await (const file of walk(dir)) {
   if (!RASTER.test(file)) continue;
   const before = (await stat(file)).size;
   if (before < MIN_BYTES) continue;

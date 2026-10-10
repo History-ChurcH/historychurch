@@ -1,4 +1,4 @@
-# GitHub 웹(또는 휴대폰 브라우저)에서 public/uploads 에 jpg·png 사진을 올리면,
+# GitHub 웹(또는 휴대폰 브라우저)에서 주보 폴더나 public/uploads 에 jpg·png 사진을 올리면,
 # 홈페이지용 WebP 로 줄여서 다시 커밋합니다. (휴대폰 원본 사진이 저장소를 무겁게 만들지 않도록)
 # 관리자 화면(/admin)으로 올린 사진은 이미 WebP 라서 이 작업이 할 일이 없습니다.
 name: 올린 사진 자동으로 줄이기
@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'public/uploads/**'
+      - '주보/**'
   workflow_dispatch:
 
 permissions:
@@ -38,7 +39,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A public/uploads src/content src/data
+          git add -A 주보 public/uploads src/content src/data
           git commit -m "사진 ${{ steps.optimize.outputs.count }}장 자동으로 줄임 (WebP)"
           # 그사이 다른 커밋(설교 자동 추가 등)이 올라왔으면 위에 얹어서 올립니다.
           for i in 1 2 3; do

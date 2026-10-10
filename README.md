@@ -44,7 +44,9 @@ src/
 public/
   admin/         관리자 화면 (config.yml 에 메뉴 구성)
   uploads/       CMS 로 올린 사진·파일
-    bulletins/   주보. 날짜 이름(2026-10-11-1.jpg, 2026-10-11.pdf)으로 올리면 .md 없이도 주보가 됨
+    bulletins/   예전 주보 이미지(2026-10-04 까지) · 관리자 화면으로 올린 주보
+주보/            새 주보 올리는 곳. 날짜 이름(2026-10-11-1.jpg, 2026-10-11.pdf)으로 올리면 .md 없이도 주보가 됨
+                 빌드할 때 /uploads/bulletins/ 로 복사되므로 예전 주보와 주소 규칙이 같음
 scripts/
   sync-sermons.mjs      유튜브 → 설교 글 자동 생성
   import-wordpress.mjs  기존 워드프레스 글·사진 가져오기
@@ -94,7 +96,7 @@ scripts/
 
 - 글 상단에 `date` 가 없으면 파일 이름 앞의 날짜를 씁니다 (`src/content.config.ts` 의 `md()`).
 - `_` 로 시작하는 파일은 사이트에서 빠집니다. 관리자 화면에서는 제목이 `[템플릿]` 으로 시작하는 글을 숨깁니다 (`config.yml` 의 `filter`).
-- 주보는 `src/lib/bulletin-loader.ts` 가 `public/uploads/bulletins/` 의 날짜 이름 파일을 날짜별로 묶어 만듭니다. 같은 날짜의 `.md` 가 있으면 `.md` 가 우선입니다. (파일만 올린 주보는 관리자 화면 목록에는 나오지 않습니다)
+- 주보는 `src/lib/bulletin-loader.ts` 가 맨 위 `주보/` 와 `public/uploads/bulletins/` 의 날짜 이름 파일을 날짜별로 묶어 만듭니다. `주보/` 의 파일은 `astro.config.mjs` 의 `bulletinDropFolder()` 가 빌드 때 `dist/uploads/bulletins/` 로 복사합니다(같은 이름이 있으면 예전 파일 우선). 같은 날짜의 `.md` 가 있으면 `.md` 가 우선입니다. (파일만 올린 주보는 관리자 화면 목록에는 나오지 않습니다)
 - 큰 사진은 `optimize-uploads.yml` 이 WebP 로 줄여 다시 커밋합니다. 이미 400KB 이하인 파일은 그대로 둡니다.
 - 봉사자가 찾기 쉽도록 글 폴더는 한국어 이름입니다. 코드에서 쓰는 컬렉션 이름(columns 등)과 주소(/news/columns/…)는 영어 그대로이고, 폴더와의 연결은 `src/content.config.ts` 의 `md('목회서신')` 처럼 적혀 있습니다. 주보·설교·앨범과 사진 폴더(public/uploads)는 사진 주소가 바뀌지 않도록 영어로 둡니다.
 - 카테고리 목록: `/news/bulletins/` · `/news/columns/` · `/news/notices/` · `/news/posts/`(은혜나눔 + 게시판), 영상: `/videos/`
