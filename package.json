@@ -14,7 +14,8 @@
     "import:wordpress": "node scripts/import-wordpress.mjs"
   },
   "dependencies": {
-    "astro": "^7.3.5"
+    "astro": "^7.3.5",
+    "github-slugger": "^2.0.0"
   },
   "devDependencies": {
     "sharp": "^0.35.4"
