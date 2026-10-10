@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "astro": "^7.3.5",
-    "github-slugger": "^2.0.0"
+    "github-slugger": "^2.0.0",
+    "mammoth": "^1.13.0"
   },
   "devDependencies": {
     "sharp": "^0.35.4"

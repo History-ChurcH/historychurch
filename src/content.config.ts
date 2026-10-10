@@ -3,6 +3,7 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
 import { slug as githubSlug } from 'github-slugger';
 import { bulletinLoader } from './lib/bulletin-loader';
+import { withDocuments } from './lib/document-loader';
 
 // CMS 는 비어 있는 선택 항목을 '' 로 저장하므로 null/'' 모두 허용합니다.
 const text = z.string().nullish().transform((v) => v ?? '');
@@ -48,9 +49,14 @@ const sermons = defineCollection({
   }),
 });
 
+/*
+ * 목회서신 · 공지 · 은혜나눔 · 게시판 폴더에는 마크다운 말고도 워드(.docx)·메모장(.txt) 파일을 그대로 올릴 수 있습니다.
+ * (src/lib/document-loader.ts — 파일 이름 `2026-10-11 제목.docx` 에서 날짜와 제목을 읽습니다)
+ */
+
 /** 목회서신(칼럼) */
 const columns = defineCollection({
-  loader: md('목회서신'),
+  loader: withDocuments(md('목회서신'), '목회서신'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -72,7 +78,7 @@ const bulletins = defineCollection({
 
 /** 공지 · 교회 소식 */
 const notices = defineCollection({
-  loader: md('공지'),
+  loader: withDocuments(md('공지'), '공지'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -83,7 +89,7 @@ const notices = defineCollection({
 
 /** 은혜나눔 — 성도들의 간증 · 묵상 나눔 */
 const grace = defineCollection({
-  loader: md('은혜나눔'),
+  loader: withDocuments(md('은혜나눔'), '은혜나눔'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -94,7 +100,7 @@ const grace = defineCollection({
 
 /** 게시판 — 공지·주보·목회서신이 아닌 일반 글 (게시판 목록에 은혜나눔과 함께 보입니다) */
 const posts = defineCollection({
-  loader: md('게시판'),
+  loader: withDocuments(md('게시판'), '게시판'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
