@@ -3,24 +3,34 @@ import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import PageHero from '../../components/PageHero.astro';
 import CrossMark from '../../components/CrossMark.astro';
+import PostList, { type PostItem } from '../../components/PostList.astro';
 import { dot, excerpt, href } from '../../lib/utils';
 
-const KIND = { bulletins: '주보', columns: '목회서신', notices: '공지', grace: '은혜나눔' } as const;
+/** 탭 이름. 은혜나눔과 일반 게시물은 ‘게시판’ 탭에 함께 모입니다. */
+const TABS = ['주보', '목회서신', '공지', '게시판'];
 
-const [bulletins, columns, notices, grace] = await Promise.all([getCollection('bulletins'), getCollection('columns'), getCollection('notices'), getCollection('grace')]);
+const [bulletins, columns, notices, grace, posts] = await Promise.all([
+  getCollection('bulletins'),
+  getCollection('columns'),
+  getCollection('notices'),
+  getCollection('grace'),
+  getCollection('posts'),
+]);
 
 const items = [
-  ...bulletins.map((e) => ({ kind: 'bulletins' as const, id: e.id, title: e.data.title, date: e.data.date, text: '', thumb: e.data.images[0] ?? '', pinned: false })),
-  ...columns.map((e) => ({ kind: 'columns' as const, id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.cover, pinned: false })),
-  ...notices.map((e) => ({ kind: 'notices' as const, id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: e.data.pinned })),
-  ...grace.map((e) => ({ kind: 'grace' as const, id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: false })),
+  ...bulletins.map((e) => ({ kind: 'bulletins', tab: '주보', tag: '주보', id: e.id, title: e.data.title, date: e.data.date, text: '', thumb: e.data.images[0] ?? '', pinned: false })),
+  ...columns.map((e) => ({ kind: 'columns', tab: '목회서신', tag: '목회서신', id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.cover, pinned: false })),
+  ...notices.map((e) => ({ kind: 'notices', tab: '공지', tag: '공지', id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: e.data.pinned })),
+  ...grace.map((e) => ({ kind: 'grace', tab: '게시판', tag: '은혜나눔', id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: false })),
+  ...posts.map((e) => ({ kind: 'posts', tab: '게시판', tag: e.data.category || '게시판', id: e.id, title: e.data.title, date: e.data.date, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '', pinned: false })),
 ].sort((a, b) => b.date.getTime() - a.date.getTime() || b.id.localeCompare(a.id, 'en', { numeric: true }));
 
+const rows: PostItem[] = items.map((i) => ({ href: href(`/news/${i.kind}/${i.id}/`), date: i.date, tag: i.tag, category: i.tab, title: i.title, text: i.text, thumb: i.thumb }));
 const pinned = items.filter((i) => i.pinned);
 ---
 
-<Base title="교회 소식" description="히스토리교회 주보, 목회서신, 공지사항, 은혜나눔">
-  <PageHero label="교회 소식 · News" title="이번 주 히스토리교회" lead="매주 주보와 담임목사님의 목회서신, 교회의 소식과 성도들의 은혜나눔을 한곳에서 확인하세요." />
+<Base title="교회 소식" description="히스토리교회 주보, 목회서신, 공지사항, 게시판">
+  <PageHero label="교회 소식 · News" title="이번 주 히스토리교회" lead="매주 주보와 담임목사님의 목회서신, 교회의 소식과 성도들의 나눔을 한곳에서 확인하세요." />
 
   <section class="section paper">
     <div class="container" data-filter-list data-page="15">
@@ -42,34 +52,10 @@ const pinned = items.filter((i) => i.pinned);
 
       <div class="tabs" role="group" aria-label="소식 종류">
         <button type="button" aria-pressed="true" data-filter="all">전체</button>
-        {Object.values(KIND).map((label) => <button type="button" aria-pressed="false" data-filter={label}>{label}</button>)}
+        {TABS.map((label) => <button type="button" aria-pressed="false" data-filter={label}>{label}</button>)}
       </div>
 
-      <ul role="list" class="post-list">
-        {
-          items.map((i) => (
-            <li data-category={KIND[i.kind]}>
-              <a class="post-row" href={href(`/news/${i.kind}/${i.id}/`)}>
-                <span class="post-row__date num">{dot(i.date)}</span>
-                <span class="post-row__kind">
-                  <span class="tag">{KIND[i.kind]}</span>
-                </span>
-                <span class="post-row__main">
-                  <span class="post-row__title">{i.title}</span>
-                  {i.text && <span class="post-row__text muted">{i.text}</span>}
-                </span>
-                {i.thumb ? (
-                  <span class="post-row__thumb media">
-                    <img src={href(i.thumb)} alt="" loading="lazy" />
-                  </span>
-                ) : (
-                  <span />
-                )}
-              </a>
-            </li>
-          ))
-        }
-      </ul>
+      <PostList items={rows} />
 
       <div class="more-wrap">
         <button type="button" class="btn btn--ghost" data-more>더 보기<span class="btn__icon"><CrossMark class="" /></span></button>
@@ -100,90 +86,6 @@ const pinned = items.filter((i) => i.pinned);
     min-width: 12em;
   }
 
-  .post-list {
-    border-top: 1px solid var(--ink);
-  }
-
-  .post-row {
-    display: grid;
-    grid-template-columns: 7.5rem 6.5rem minmax(0, 1fr) 132px;
-    gap: 24px;
-    align-items: center;
-    padding: 24px 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .post-row__date {
-    color: var(--muted);
-    font-size: 0.93rem;
-  }
-
-  .post-row__main {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  .post-row__title {
-    font-size: 1.15rem;
-    font-weight: 650;
-    letter-spacing: -0.025em;
-    line-height: 1.45;
-    transition: color 0.3s;
-  }
-
-  .post-row:hover .post-row__title {
-    color: var(--green-600);
-  }
-
-  .post-row__text {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    font-size: 0.93rem;
-    line-height: 1.7;
-  }
-
-  .post-row__thumb {
-    aspect-ratio: 4 / 3;
-    border-radius: 12px;
-    background: var(--cream);
-  }
-
-  @media (max-width: 760px) {
-    .post-row {
-      grid-template-columns: minmax(0, 1fr) 88px;
-      grid-template-areas:
-        'kind thumb'
-        'main thumb'
-        'date thumb';
-      gap: 6px 16px;
-      padding: 20px 0;
-    }
-
-    .post-row__date {
-      grid-area: date;
-      font-size: 0.85rem;
-    }
-
-    .post-row__kind {
-      grid-area: kind;
-    }
-
-    .post-row__main {
-      grid-area: main;
-    }
-
-    .post-row__thumb,
-    .post-row > span:last-child {
-      grid-area: thumb;
-    }
-
-    .post-row__text {
-      display: none;
-    }
-  }
 </style>
 
 <script>

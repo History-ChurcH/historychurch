@@ -2,14 +2,23 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import CrossMark from '../../../components/CrossMark.astro';
+import Lightbox from '../../../components/Lightbox.astro';
 import { byDateDesc, excerpt, href, longDate } from '../../../lib/utils';
 
-type Kind = 'bulletins' | 'columns' | 'notices' | 'grace';
+type Kind = 'bulletins' | 'columns' | 'notices' | 'grace' | 'posts';
 type Entry = CollectionEntry<Kind>;
-const LABEL: Record<Kind, string> = { bulletins: '주보', columns: '목회서신', notices: '공지', grace: '은혜나눔' };
+const LABEL: Record<Kind, string> = { bulletins: '주보', columns: '목회서신', notices: '공지', grace: '은혜나눔', posts: '게시판' };
+/** ‘목록’ 으로 돌아가는 주소. 은혜나눔은 게시판 안의 한 갈래입니다. */
+const LIST: Record<Kind, string> = {
+  bulletins: '/news/bulletins/',
+  columns: '/news/columns/',
+  notices: '/news/notices/',
+  grace: `/news/posts/#${encodeURIComponent('은혜나눔')}`,
+  posts: '/news/posts/',
+};
 
 export async function getStaticPaths() {
-  const kinds: Kind[] = ['bulletins', 'columns', 'notices', 'grace'];
+  const kinds: Kind[] = ['bulletins', 'columns', 'notices', 'grace', 'posts'];
   const paths = [];
   for (const kind of kinds) {
     const list = ((await getCollection(kind)) as Entry[]).sort(byDateDesc);
@@ -34,17 +43,20 @@ const images: string[] = data.images ?? [];
 const cover: string = data.cover ?? '';
 const file: string = data.file ?? '';
 const isColumn = kind === 'columns';
+const isPdf = /\.pdf$/i.test(file);
+const label = kind === 'posts' && data.category ? data.category : LABEL[kind];
+const zoomList = JSON.stringify(images.map((src) => href(src)));
 ---
 
 <Base title={entry.data.title} description={excerpt(entry.body, 140) || `${LABEL[kind]} · ${entry.data.title}`}>
   <section class="post-hero dark">
     <div class="container narrow">
-      <a class="back" href={href(`/news/#${encodeURIComponent(LABEL[kind])}`)}>← {LABEL[kind]} 목록</a>
-      <p class="label"><CrossMark /> {LABEL[kind]}</p>
+      <a class="back" href={href(LIST[kind])}>← {kind === 'grace' ? '게시판' : LABEL[kind]} 목록</a>
+      <p class="label"><CrossMark /> {label}</p>
       <h1 class="h1 post-hero__title">{entry.data.title}</h1>
       <p class="muted">
         {longDate(entry.data.date)}
-        {(isColumn || kind === 'grace') && data.author && ` · ${data.author}`}
+        {data.author && ` · ${data.author}`}
       </p>
     </div>
   </section>
@@ -67,7 +79,7 @@ const isColumn = kind === 'columns';
         images.length > 0 && (
           <div class="post-images">
             {images.map((src, i) => (
-              <a href={href(src)} target="_blank" rel="noopener" aria-label={`${i + 1}번째 이미지 크게 보기`}>
+              <a href={href(src)} data-zoom={zoomList} data-zoom-start={i} data-zoom-title={entry.data.title} aria-label={`${i + 1}번째 이미지 크게 보기`}>
                 <img src={href(src)} alt={`${entry.data.title} ${i + 1}`} loading={i ? 'lazy' : 'eager'} />
               </a>
             ))}
@@ -76,10 +88,26 @@ const isColumn = kind === 'columns';
       }
 
       {
+        isPdf && (
+          <object class="post-pdf" data={href(file)} type="application/pdf" aria-label={`${entry.data.title} PDF`}>
+            <p class="muted">이 브라우저에서는 PDF 를 바로 보여 줄 수 없습니다. 아래 단추를 눌러 열어 주세요.</p>
+          </object>
+        )
+      }
+
+      {
         file && (
-          <p class="post-file">
-            <a class="btn btn--gold" href={href(file)} target="_blank" rel="noopener">
-              첨부파일 내려받기
+          <p class="post-file btn-row">
+            {isPdf && (
+              <a class="btn btn--gold" href={href(file)} target="_blank" rel="noopener">
+                PDF 크게 보기
+                <span class="btn__icon">
+                  <CrossMark class="" />
+                </span>
+              </a>
+            )}
+            <a class:list={['btn', isPdf ? 'btn--ghost' : 'btn--gold']} href={href(file)} download>
+              {isPdf ? '내려받기' : '첨부파일 내려받기'}
               <span class="btn__icon">
                 <CrossMark class="" />
               </span>
@@ -110,6 +138,8 @@ const isColumn = kind === 'columns';
       </nav>
     </div>
   </article>
+
+  {images.length > 0 && <Lightbox />}
 </Base>
 
 <style>
@@ -156,10 +186,35 @@ const isColumn = kind === 'columns';
     margin-top: 32px;
   }
 
+  .post-images a {
+    cursor: zoom-in;
+  }
+
   .post-images img {
     width: 100%;
     border-radius: 14px;
     box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .post-pdf {
+    display: block;
+    width: 100%;
+    height: min(80vh, 1100px);
+    margin-top: 32px;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px var(--line);
+    background: var(--cream);
+  }
+
+  .post-pdf p {
+    padding: 24px;
+  }
+
+  /* 휴대폰 브라우저는 PDF 를 첫 장만 보여 주는 경우가 많아, 단추로 여는 쪽이 낫습니다 */
+  @media (max-width: 760px) {
+    .post-pdf {
+      display: none;
+    }
   }
 
   .post-file {

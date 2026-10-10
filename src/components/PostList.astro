@@ -1,0 +1,149 @@
+---
+/** 게시판형 목록 한 줄씩: 날짜 · 꼬리표 · 제목/미리보기 · 썸네일 (교회 소식, 목회서신, 공지, 게시판) */
+import { dot, href } from '../lib/utils';
+
+export interface PostItem {
+  href: string;
+  date: Date;
+  tag: string;
+  title: string;
+  text?: string;
+  thumb?: string;
+  /** 탭으로 거를 때 쓰는 이름 (data-category) */
+  category?: string;
+}
+
+interface Props {
+  items: PostItem[];
+  /** 꼬리표 칸을 숨길 때 (한 종류만 있는 목록) */
+  hideTag?: boolean;
+}
+const { items, hideTag = false } = Astro.props;
+---
+
+<ul role="list" class:list={['post-list', { 'post-list--notag': hideTag }]}>
+  {
+    items.map((i) => (
+      <li data-category={i.category ?? i.tag}>
+        <a class="post-row" href={i.href}>
+          <span class="post-row__date num">{dot(i.date)}</span>
+          <span class="post-row__kind">
+            <span class="tag">{i.tag}</span>
+          </span>
+          <span class="post-row__main">
+            <span class="post-row__title">{i.title}</span>
+            {i.text && <span class="post-row__text muted">{i.text}</span>}
+          </span>
+          {i.thumb ? (
+            <span class="post-row__thumb media">
+              <img src={href(i.thumb)} alt="" loading="lazy" />
+            </span>
+          ) : (
+            <span />
+          )}
+        </a>
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .post-list {
+    border-top: 1px solid var(--ink);
+  }
+
+  .post-row {
+    display: grid;
+    grid-template-columns: 7.5rem 6.5rem minmax(0, 1fr) 132px;
+    gap: 24px;
+    align-items: center;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .post-row__date {
+    color: var(--muted);
+    font-size: 0.93rem;
+  }
+
+  .post-row__main {
+    display: grid;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .post-row__title {
+    font-size: 1.15rem;
+    font-weight: 650;
+    letter-spacing: -0.025em;
+    line-height: 1.45;
+    transition: color 0.3s;
+  }
+
+  .post-row:hover .post-row__title {
+    color: var(--green-600);
+  }
+
+  .post-row__text {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.93rem;
+    line-height: 1.7;
+  }
+
+  .post-row__thumb {
+    aspect-ratio: 4 / 3;
+    border-radius: 12px;
+    background: var(--cream);
+  }
+
+  @media (max-width: 760px) {
+    .post-row {
+      grid-template-columns: minmax(0, 1fr) 88px;
+      grid-template-areas:
+        'kind thumb'
+        'main thumb'
+        'date thumb';
+      gap: 6px 16px;
+      padding: 20px 0;
+    }
+
+    .post-row__date {
+      grid-area: date;
+      font-size: 0.85rem;
+    }
+
+    .post-row__kind {
+      grid-area: kind;
+    }
+
+    .post-row__main {
+      grid-area: main;
+    }
+
+    .post-row__thumb,
+    .post-row > span:last-child {
+      grid-area: thumb;
+    }
+
+    .post-row__text {
+      display: none;
+    }
+  }
+
+  .post-list--notag .post-row {
+    grid-template-columns: 7.5rem minmax(0, 1fr) 132px;
+  }
+
+  .post-list--notag .post-row__kind {
+    display: none;
+  }
+
+  @media (max-width: 760px) {
+    .post-list--notag .post-row {
+      grid-template-columns: minmax(0, 1fr) 88px;
+    }
+  }
+</style>

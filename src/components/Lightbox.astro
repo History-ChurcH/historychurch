@@ -1,0 +1,207 @@
+---
+/**
+ * 이미지 크게 보기 (주보·공지·게시판 이미지)
+ * 페이지에 한 번만 넣고, 누를 요소에 data-zoom 을 붙입니다.
+ *   <a href={첫 이미지} data-zoom={JSON.stringify([이미지 주소들])} data-zoom-start="0" data-zoom-title="제목">
+ * - 이미지를 누르면 확대/축소, 옆으로 밀거나 ‹ › 로 넘기기, Esc 로 닫기
+ * - 자바스크립트가 꺼져 있으면 링크대로 이미지 파일이 열립니다.
+ */
+---
+
+<dialog class="zoom" data-zoom-dialog aria-label="이미지 크게 보기">
+  <div class="zoom__stage" data-zoom-stage>
+    <img alt="" data-zoom-img />
+  </div>
+  <p class="zoom__count num" data-zoom-count></p>
+  <a class="zoom__btn zoom__open" data-zoom-open target="_blank" rel="noopener" aria-label="원본 이미지 새 창에서 열기">
+    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.8" d="M14 4h6v6M20 4l-8 8M18 14v6H4V6h6"></path></svg>
+  </a>
+  <button type="button" class="zoom__btn zoom__close" data-zoom-close aria-label="닫기">✕</button>
+  <button type="button" class="zoom__btn zoom__prev" data-zoom-prev aria-label="이전 이미지">‹</button>
+  <button type="button" class="zoom__btn zoom__next" data-zoom-next aria-label="다음 이미지">›</button>
+</dialog>
+
+<style>
+  .zoom {
+    width: 100vw;
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: rgba(12, 20, 18, 0.96);
+    color: var(--on-dark);
+    overflow: hidden;
+  }
+
+  .zoom::backdrop {
+    background: transparent;
+  }
+
+  .zoom__stage {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .zoom__stage img {
+    max-width: min(94vw, 1600px);
+    max-height: 86dvh;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #fff;
+    cursor: zoom-in;
+    user-select: none;
+  }
+
+  /* 확대: 원래 크기에 가깝게 키우고 스크롤로 살펴봅니다 */
+  .zoom.is-zoomed .zoom__stage {
+    place-items: start;
+  }
+
+  .zoom.is-zoomed .zoom__stage img {
+    max-width: none;
+    max-height: none;
+    margin: auto;
+    border-radius: 0;
+    cursor: zoom-out;
+  }
+
+  .zoom__count {
+    position: absolute;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 2px 12px;
+    border-radius: 999px;
+    background: rgba(12, 20, 18, 0.6);
+    font-size: 0.9rem;
+    color: var(--on-dark-2);
+  }
+
+  .zoom__btn {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    background: rgba(12, 20, 18, 0.55);
+    box-shadow: inset 0 0 0 1px rgba(244, 240, 230, 0.16);
+    font-size: 1.6rem;
+    line-height: 1;
+    transition: background-color 0.3s;
+  }
+
+  .zoom__btn:hover {
+    background: rgba(61, 95, 88, 0.85);
+  }
+
+  .zoom__close {
+    top: 18px;
+    right: 18px;
+    font-size: 1.1rem;
+  }
+
+  .zoom__open {
+    top: 18px;
+    right: 82px;
+  }
+
+  .zoom__prev,
+  .zoom__next {
+    top: 50%;
+    margin-top: -26px;
+  }
+
+  .zoom__prev {
+    left: 18px;
+  }
+
+  .zoom__next {
+    right: 18px;
+  }
+
+  .zoom.is-single .zoom__prev,
+  .zoom.is-single .zoom__next,
+  .zoom.is-single .zoom__count {
+    display: none;
+  }
+
+  @media (max-width: 560px) {
+    .zoom__prev,
+    .zoom__next {
+      top: auto;
+      bottom: 12px;
+      margin-top: 0;
+    }
+  }
+</style>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>('[data-zoom-dialog]')!;
+  const stage = dialog.querySelector<HTMLElement>('[data-zoom-stage]')!;
+  const img = dialog.querySelector<HTMLImageElement>('[data-zoom-img]')!;
+  const count = dialog.querySelector<HTMLElement>('[data-zoom-count]')!;
+  const open = dialog.querySelector<HTMLAnchorElement>('[data-zoom-open]')!;
+  let list: string[] = [];
+  let title = '';
+  let index = 0;
+
+  const setZoom = (on: boolean) => {
+    dialog.classList.toggle('is-zoomed', on);
+    // 휴대폰에서는 화면 너비의 2배 정도, 컴퓨터에서는 원래 크기까지 키웁니다.
+    img.style.width = on ? `${Math.max(Math.min(img.naturalWidth || 1600, innerWidth * 2.2), innerWidth * 1.4)}px` : '';
+    stage.scrollTo(0, 0);
+  };
+
+  const show = (i: number) => {
+    index = (i + list.length) % list.length;
+    setZoom(false);
+    img.src = list[index];
+    img.alt = list.length > 1 ? `${title} ${index + 1}` : title;
+    open.href = list[index];
+    count.textContent = `${index + 1} / ${list.length}`;
+  };
+
+  document.addEventListener('click', (e) => {
+    const trigger = (e.target as Element).closest<HTMLElement>('[data-zoom]');
+    if (!trigger) return;
+    e.preventDefault();
+    try {
+      list = JSON.parse(trigger.dataset.zoom || '[]');
+    } catch {
+      list = [];
+    }
+    if (!list.length) return;
+    title = trigger.dataset.zoomTitle || '';
+    dialog.classList.toggle('is-single', list.length < 2);
+    show(Number(trigger.dataset.zoomStart || 0));
+    dialog.showModal();
+  });
+
+  img.addEventListener('click', () => setZoom(!dialog.classList.contains('is-zoomed')));
+  dialog.querySelector('[data-zoom-close]')!.addEventListener('click', () => dialog.close());
+  dialog.querySelector('[data-zoom-prev]')!.addEventListener('click', () => show(index - 1));
+  dialog.querySelector('[data-zoom-next]')!.addEventListener('click', () => show(index + 1));
+  stage.addEventListener('click', (e) => e.target === stage && dialog.close());
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') show(index - 1);
+    if (e.key === 'ArrowRight') show(index + 1);
+  });
+
+  // 휴대폰에서 옆으로 밀어서 넘기기 (확대해서 보는 중에는 넘기지 않습니다)
+  let startX = 0;
+  let fingers = 0;
+  dialog.addEventListener('touchstart', (e) => ((startX = e.touches[0].clientX), (fingers = e.touches.length)), { passive: true });
+  dialog.addEventListener('touchend', (e) => {
+    if (fingers > 1 || dialog.classList.contains('is-zoomed') || list.length < 2) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) show(index + (dx < 0 ? 1 : -1));
+  });
+</script>

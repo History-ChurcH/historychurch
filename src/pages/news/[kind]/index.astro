@@ -1,0 +1,307 @@
+---
+// 카테고리별 목록: /news/bulletins/ · /news/columns/ · /news/notices/ · /news/posts/
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import PageHero from '../../../components/PageHero.astro';
+import CrossMark from '../../../components/CrossMark.astro';
+import Lightbox from '../../../components/Lightbox.astro';
+import PostList, { type PostItem } from '../../../components/PostList.astro';
+import { byDateDesc, dot, excerpt, href } from '../../../lib/utils';
+
+type Kind = 'bulletins' | 'columns' | 'notices' | 'posts';
+
+const PAGES: Record<Kind, { title: string; label: string; heading: string; lead: string }> = {
+  bulletins: { title: '주보', label: '주보 · Bulletin', heading: '주보', lead: '매주 주일 주보입니다. 이미지를 누르면 크게 볼 수 있습니다.' },
+  columns: { title: '목회서신', label: '목회서신 · Letters', heading: '목회서신', lead: '담임목사님이 매주 성도들에게 보내는 편지입니다.' },
+  notices: { title: '공지', label: '공지 · Notice', heading: '공지사항', lead: '교회 행사와 일정, 함께 알아야 할 소식입니다.' },
+  posts: { title: '게시판', label: '게시판 · Board', heading: '게시판', lead: '성도들의 은혜나눔과 사역 이야기, 교회의 여러 글을 모았습니다.' },
+};
+
+export function getStaticPaths() {
+  return (['bulletins', 'columns', 'notices', 'posts'] as const).map((kind) => ({ params: { kind } }));
+}
+
+const kind = Astro.params.kind as Kind;
+const page = PAGES[kind];
+
+/** 게시판형 목록 (목회서신 · 공지 · 게시판) */
+let rows: PostItem[] = [];
+let tabs: string[] = [];
+let pinned: PostItem[] = [];
+
+if (kind === 'columns') {
+  rows = (await getCollection('columns'))
+    .sort(byDateDesc)
+    .map((e) => ({ href: href(`/news/columns/${e.id}/`), date: e.data.date, tag: '목회서신', title: e.data.title, text: excerpt(e.body, 120), thumb: e.data.cover }));
+} else if (kind === 'notices') {
+  const notices = (await getCollection('notices')).sort(byDateDesc);
+  const toRow = (e: (typeof notices)[number]) => ({ href: href(`/news/notices/${e.id}/`), date: e.data.date, tag: '공지', title: e.data.title, text: excerpt(e.body, 120), thumb: e.data.images[0] ?? '' });
+  pinned = notices.filter((e) => e.data.pinned).map(toRow);
+  rows = notices.map(toRow);
+} else if (kind === 'posts') {
+  const [grace, posts] = await Promise.all([getCollection('grace'), getCollection('posts')]);
+  const all = [
+    ...grace.map((e) => ({ e, kind: 'grace', tag: '은혜나눔', author: e.data.author })),
+    ...posts.map((e) => ({ e, kind: 'posts', tag: e.data.category || '게시판', author: e.data.author })),
+  ].sort((a, b) => byDateDesc(a.e, b.e));
+  rows = all.map(({ e, kind, tag, author }) => ({
+    href: href(`/news/${kind}/${e.id}/`),
+    date: e.data.date,
+    tag,
+    title: e.data.title,
+    text: [author, excerpt(e.body, 110)].filter(Boolean).join(' · '),
+    thumb: e.data.images[0] ?? '',
+  }));
+  tabs = [...new Set(rows.map((r) => r.tag))];
+}
+
+/** 주보: 썸네일 격자 */
+const bulletins = kind === 'bulletins' ? (await getCollection('bulletins')).sort(byDateDesc) : [];
+---
+
+<Base title={page.title} description={`히스토리교회 ${page.title} — ${page.lead}`}>
+  <PageHero label={page.label} title={page.heading} lead={page.lead}>
+    <nav class="kind-nav" aria-label="교회 소식 갈래">
+      <a href={href('/news/')}>전체</a>
+      {
+        (Object.keys(PAGES) as Kind[]).map((k) => (
+          <a href={href(`/news/${k}/`)} aria-current={k === kind ? 'page' : undefined}>
+            {PAGES[k].title}
+          </a>
+        ))
+      }
+    </nav>
+  </PageHero>
+
+  <section class="section paper">
+    {
+      kind === 'bulletins' ? (
+        <div class="container" data-filter-list data-page="12">
+          {bulletins.length === 0 && <p class="empty muted">아직 올라온 주보가 없습니다.</p>}
+          <ul role="list" class="bulletin-grid">
+            {bulletins.map((b, n) => {
+              const images = b.data.images.map((src) => href(src));
+              const pdf = /\.pdf$/i.test(b.data.file) ? href(b.data.file) : '';
+              return (
+                <li class="bulletin" data-category="주보">
+                  {images.length > 0 ? (
+                    <a class="bulletin__thumb media" href={images[0]} data-zoom={JSON.stringify(images)} data-zoom-title={b.data.title} aria-label={`${b.data.title} 크게 보기`}>
+                      <img src={images[0]} alt="" loading={n < 4 ? 'eager' : 'lazy'} decoding="async" />
+                      {images.length > 1 && <span class="bulletin__pages num">{images.length}면</span>}
+                    </a>
+                  ) : (
+                    <a class="bulletin__thumb bulletin__thumb--pdf media" href={pdf || href(`/news/bulletins/${b.id}/`)} target={pdf ? '_blank' : undefined} rel="noopener">
+                      <span class="bulletin__pdf">PDF</span>
+                    </a>
+                  )}
+                  <a class="bulletin__info" href={href(`/news/bulletins/${b.id}/`)}>
+                    <span class="bulletin__title">{b.data.title}</span>
+                    <span class="num muted">
+                      {dot(b.data.date)}
+                      {pdf && ' · PDF'}
+                    </span>
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+          <div class="more-wrap">
+            <button type="button" class="btn btn--ghost" data-more>
+              더 보기
+              <span class="btn__icon">
+                <CrossMark class="" />
+              </span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div class="container" data-filter-list data-page="15">
+          {pinned.length > 0 && (
+            <ul role="list" class="pinned">
+              {pinned.map((i) => (
+                <li>
+                  <a href={i.href}>
+                    <span class="tag">📌 고정</span>
+                    <strong>{i.title}</strong>
+                    <span class="num muted">{dot(i.date)}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {tabs.length > 1 && (
+            <div class="tabs" role="group" aria-label="게시판 분류">
+              <button type="button" aria-pressed="true" data-filter="all">
+                전체
+              </button>
+              {tabs.map((t) => (
+                <button type="button" aria-pressed="false" data-filter={t}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {rows.length === 0 ? <p class="empty muted">아직 올라온 글이 없습니다.</p> : <PostList items={rows} hideTag={kind !== 'posts'} />}
+
+          <div class="more-wrap">
+            <button type="button" class="btn btn--ghost" data-more>
+              더 보기
+              <span class="btn__icon">
+                <CrossMark class="" />
+              </span>
+            </button>
+          </div>
+        </div>
+      )
+    }
+  </section>
+
+  {kind === 'bulletins' && <Lightbox />}
+</Base>
+
+<style>
+  .kind-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 36px;
+  }
+
+  .kind-nav a {
+    padding: 8px 18px;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px var(--line-dark);
+    color: var(--on-dark-2);
+    font-size: 0.93rem;
+    font-weight: 600;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .kind-nav a:hover {
+    color: var(--on-dark);
+    background: rgba(244, 240, 230, 0.08);
+  }
+
+  .kind-nav a[aria-current='page'] {
+    background: var(--gold);
+    box-shadow: none;
+    color: var(--green-950);
+  }
+
+  .empty {
+    padding: 48px 0;
+    text-align: center;
+  }
+
+  .pinned {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+
+  .pinned a {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 18px 22px;
+    border-radius: 14px;
+    background: var(--cream);
+  }
+
+  .pinned strong {
+    flex: 1;
+    min-width: 12em;
+  }
+
+  /* 주보 격자 */
+  .bulletin-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(32px, 4vw, 48px) clamp(16px, 2vw, 28px);
+  }
+
+  @media (max-width: 1080px) {
+    .bulletin-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    .bulletin-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .bulletin__thumb {
+    position: relative;
+    display: block;
+    aspect-ratio: 1403 / 992;
+    border-radius: 12px;
+    background: var(--cream);
+    box-shadow: 0 0 0 1px var(--line);
+    cursor: zoom-in;
+  }
+
+  .bulletin__thumb img {
+    transition: transform 1s var(--ease);
+  }
+
+  .bulletin__thumb:hover img {
+    transform: scale(1.03);
+  }
+
+  .bulletin__thumb--pdf {
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+
+  .bulletin__pdf {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--green);
+    color: var(--on-dark);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  .bulletin__pages {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 1px 10px;
+    border-radius: 999px;
+    background: rgba(19, 33, 29, 0.72);
+    color: var(--on-dark);
+    font-size: 0.8rem;
+  }
+
+  .bulletin__info {
+    display: grid;
+    gap: 2px;
+    margin-top: 14px;
+  }
+
+  .bulletin__title {
+    font-weight: 650;
+    letter-spacing: -0.02em;
+    line-height: 1.45;
+    transition: color 0.3s;
+  }
+
+  .bulletin__info:hover .bulletin__title {
+    color: var(--green-600);
+  }
+
+  .bulletin__info .num {
+    font-size: 0.88rem;
+  }
+</style>
+
+<script>
+  import { setupFilterList } from '../../../lib/filter-list';
+  document.querySelectorAll<HTMLElement>('[data-filter-list]').forEach(setupFilterList);
+</script>
