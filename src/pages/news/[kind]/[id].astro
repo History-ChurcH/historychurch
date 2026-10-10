@@ -149,7 +149,7 @@ const zoomList = JSON.stringify(images.map((src) => href(src)));
   }
 
   .back {
-    display: inline-block;
+    display: table; /* 뒤따르는 갈래 표시(label)와 한 줄에 붙지 않도록 */
     margin-bottom: 36px;
     color: var(--on-dark-2);
     font-size: 0.93rem;

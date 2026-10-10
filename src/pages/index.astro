@@ -260,10 +260,16 @@ const passagePreview = sunday?.data.passage.split('\n').slice(0, 2).join('\n');
           bulletin && (
             <a class="news__bulletin reveal" href={href(`/news/bulletins/${bulletin.id}/`)}>
               <span class="news__kind">주보</span>
-              {bulletin.data.images[0] && (
+              {bulletin.data.images[0] ? (
                 <span class="media news__bulletin-img">
                   <img src={href(bulletin.data.images[0])} alt="" loading="lazy" />
                 </span>
+              ) : (
+                bulletin.data.file && (
+                  <span class="media news__bulletin-img news__bulletin-pdf">
+                    <span>PDF</span>
+                  </span>
+                )
               )}
               <span class="news__title">{bulletin.data.title}</span>
               <span class="news__date num muted">{dot(bulletin.data.date)}</span>
@@ -981,6 +987,20 @@ const passagePreview = sunday?.data.passage.split('\n').slice(0, 2).join('\n');
     aspect-ratio: 1403 / 992;
     background: var(--paper);
     box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .news__bulletin-pdf {
+    display: grid;
+    place-items: center;
+  }
+
+  .news__bulletin-pdf span {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: var(--green);
+    color: var(--on-dark);
+    font-weight: 700;
+    letter-spacing: 0.06em;
   }
 
   .news__item {
