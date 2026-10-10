@@ -16,9 +16,15 @@ const weekday = ['수요예배', '금요기도회']
 
 const bulletin = (await getCollection('bulletins')).sort(byDateDesc)[0];
 const columns = (await getCollection('columns')).sort(byDateDesc).slice(0, 3);
+// 홈 화면 공지: 고정한 공지 + 최근 30일 안의 공지만, 최대 3개. 하나도 없으면 공지 칸을 숨깁니다.
+// (사이트는 새 글·설교가 올라올 때마다 다시 만들어지므로, 30일이 지난 공지는 그때 빠집니다)
+const NOTICE_DAYS = 30;
+const noticeSince = Date.now() - NOTICE_DAYS * 24 * 60 * 60 * 1000;
 const notices = (await getCollection('notices'))
+  .filter((n) => n.data.pinned || n.data.date.getTime() >= noticeSince)
   .sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned) || byDateDesc(a, b))
-  .slice(0, 4);
+  .slice(0, 3);
+const noticeKey = notices.map((n) => n.id).join(',');
 const albums = (await getCollection('albums')).sort(byDateDesc).slice(0, 8);
 
 // 소개 글에서 ‘따옴표’로 감싼 말을 강조합니다.
@@ -249,7 +255,7 @@ const passagePreview = sunday?.data.passage.split('\n').slice(0, 2).join('\n');
         <a class="text-link" href={href('/news/')}>소식 전체 보기 →</a>
       </div>
 
-      <div class="news">
+      <div class:list={['news', { 'news--two': notices.length === 0 }]}>
         {
           bulletin && (
             <a class="news__bulletin reveal" href={href(`/news/bulletins/${bulletin.id}/`)}>
@@ -282,21 +288,33 @@ const passagePreview = sunday?.data.passage.split('\n').slice(0, 2).join('\n');
           </ul>
         </div>
 
-        <div class="news__col reveal" style="--delay:.16s">
-          <p class="news__kind">공지</p>
-          <ul role="list">
-            {
-              notices.map((n) => (
-                <li>
-                  <a class="news__item" href={href(`/news/notices/${n.id}/`)}>
-                    <span class="news__date num muted">{dot(n.data.date)}</span>
-                    <span class="news__title">{n.data.title}</span>
-                  </a>
-                </li>
-              ))
-            }
-          </ul>
-        </div>
+        {
+          notices.length > 0 && (
+            <details class="news__col news__notices reveal" style="--delay:.16s" open data-notice-fold={noticeKey}>
+              <summary class="news__kind">
+                공지
+                <span class="news__fold" aria-hidden="true" />
+                <span class="sr-only">접기/펼치기</span>
+              </summary>
+              <ul role="list">
+                {notices.map((n) => (
+                  <li>
+                    <a class="news__item" href={href(`/news/notices/${n.id}/`)}>
+                      <span class="news__date num muted">
+                        {n.data.pinned && '📌 '}
+                        {dot(n.data.date)}
+                      </span>
+                      <span class="news__title">{n.data.title}</span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              <a class="text-link news__more" href={href('/news/notices/')}>
+                공지 전체 보기 →
+              </a>
+            </details>
+          )
+        }
       </div>
     </div>
   </section>
@@ -993,8 +1011,46 @@ const passagePreview = sunday?.data.passage.split('\n').slice(0, 2).join('\n');
     line-height: 1.65;
   }
 
+  .news--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* 공지 칸 접기/펼치기 */
+  .news__notices summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .news__notices summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .news__fold {
+    width: 9px;
+    height: 9px;
+    margin-right: 4px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.35s var(--ease);
+  }
+
+  .news__notices:not([open]) .news__fold {
+    transform: translateY(2px) rotate(-135deg);
+  }
+
+  .news__more {
+    display: inline-block;
+    margin-top: 18px;
+    font-size: 0.93rem;
+  }
+
   @media (max-width: 960px) {
-    .news {
+    .news,
+    .news--two {
       grid-template-columns: 1fr;
     }
   }
@@ -1069,3 +1125,20 @@ const passagePreview = sunday?.data.passage.split('\n').slice(0, 2).join('\n');
     margin-bottom: 48px;
   }
 </style>
+
+<script>
+  // 공지 칸을 접어 두면 이 기기에서는 접힌 채로 보입니다. 새 공지가 올라오면 다시 펼쳐집니다.
+  const fold = document.querySelector<HTMLDetailsElement>('[data-notice-fold]');
+  if (fold) {
+    const KEY = 'home-notices-folded';
+    try {
+      if (localStorage.getItem(KEY) === fold.dataset.noticeFold) fold.open = false;
+    } catch {}
+    fold.addEventListener('toggle', () => {
+      try {
+        if (fold.open) localStorage.removeItem(KEY);
+        else localStorage.setItem(KEY, fold.dataset.noticeFold || '');
+      } catch {}
+    });
+  }
+</script>
