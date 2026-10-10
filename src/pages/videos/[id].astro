@@ -1,0 +1,116 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import VideoPlayer from '../../components/VideoPlayer.astro';
+import { byDateDesc, excerpt, href, longDate } from '../../lib/utils';
+
+export async function getStaticPaths() {
+  const videos = (await getCollection('videos')).sort(byDateDesc);
+  return videos.map((video, i) => ({ params: { id: video.id }, props: { video, newer: videos[i - 1], older: videos[i + 1] } }));
+}
+
+const { video, newer, older } = Astro.props;
+const { title, date, youtube } = video.data;
+const { Content } = await render(video);
+const hasBody = Boolean(video.body?.trim());
+---
+
+<Base title={title} description={excerpt(video.body, 140) || `히스토리교회 영상 · ${title}`}>
+  <section class="video-hero darker">
+    <div class="container video-hero__inner">
+      <a class="back" href={href('/videos/')}>← 영상 목록</a>
+      <p class="muted">{longDate(date)}</p>
+      <h1 class="h1">{title}</h1>
+      <div class="video-hero__video">
+        <VideoPlayer id={youtube} title={title} eager />
+      </div>
+    </div>
+  </section>
+
+  <section class="section paper">
+    <div class="container narrow">
+      {
+        hasBody && (
+          <div class="prose">
+            <Content />
+          </div>
+        )
+      }
+
+      <nav class="pager" aria-label="다른 영상">
+        {
+          newer ? (
+            <a href={href(`/videos/${newer.id}/`)}>
+              <span class="muted">← 최근 영상</span>
+              <strong>{newer.data.title}</strong>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          older && (
+            <a href={href(`/videos/${older.id}/`)} class="pager__older">
+              <span class="muted">이전 영상 →</span>
+              <strong>{older.data.title}</strong>
+            </a>
+          )
+        }
+      </nav>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .video-hero {
+    padding-top: calc(var(--header-h) + clamp(48px, 7vw, 100px));
+    padding-bottom: clamp(40px, 5vw, 72px);
+  }
+
+  .video-hero__inner {
+    max-width: 1080px;
+  }
+
+  .back {
+    display: inline-block;
+    margin-bottom: 36px;
+    color: var(--on-dark-2);
+    font-size: 0.93rem;
+  }
+
+  .back:hover {
+    color: var(--gold-soft);
+  }
+
+  .video-hero .h1 {
+    margin-top: 8px;
+    font-size: clamp(1.9rem, 4.2vw, 3.4rem);
+  }
+
+  .video-hero__video {
+    margin-top: clamp(28px, 4vw, 48px);
+  }
+
+  .pager {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 72px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line-strong);
+  }
+
+  .pager a {
+    display: grid;
+    gap: 4px;
+    font-size: 0.95rem;
+  }
+
+  .pager a:hover strong {
+    color: var(--green-600);
+  }
+
+  .pager__older {
+    text-align: right;
+  }
+</style>

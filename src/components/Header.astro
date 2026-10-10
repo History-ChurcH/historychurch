@@ -4,16 +4,37 @@ import CrossMark from './CrossMark.astro';
 import site from '../data/site.json';
 import { href } from '../lib/utils';
 
-const nav = [
+type Item = { label: string; path: string };
+const nav: (Item & { children?: Item[] })[] = [
   { label: '교회 소개', path: '/about/' },
   { label: '예배 안내', path: '/worship/' },
-  { label: '설교', path: '/sermons/' },
-  { label: '교회 소식', path: '/news/' },
+  {
+    label: '설교·영상',
+    path: '/sermons/',
+    children: [
+      { label: '설교', path: '/sermons/' },
+      { label: '영상', path: '/videos/' },
+    ],
+  },
+  {
+    label: '교회 소식',
+    path: '/news/',
+    children: [
+      { label: '전체 소식', path: '/news/' },
+      { label: '주보', path: '/news/bulletins/' },
+      { label: '목회서신', path: '/news/columns/' },
+      { label: '공지', path: '/news/notices/' },
+      { label: '게시판', path: '/news/posts/' },
+    ],
+  },
   { label: '앨범', path: '/album/' },
 ];
 
 const current = Astro.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ''), '') || '/';
-const isActive = (p: string) => current.startsWith(p);
+const isActive = (item: { path: string; children?: Item[] }) => [item, ...(item.children ?? [])].some((i) => current.startsWith(i.path));
+/** 하위 메뉴: 은혜나눔 글은 게시판에 속합니다. ‘전체 소식’은 /news/ 첫 화면에서만 표시합니다. */
+const isCurrentSub = (p: string) =>
+  p === '/news/' ? current.replace(/\/?$/, '/') === '/news/' : current.startsWith(p) || (p === '/news/posts/' && current.startsWith('/news/grace/'));
 ---
 
 <header class="site-header" data-header>
@@ -22,10 +43,26 @@ const isActive = (p: string) => current.startsWith(p);
       <ul role="list">
         {
           nav.map((item) => (
-            <li>
-              <a href={href(item.path)} aria-current={isActive(item.path) ? 'page' : undefined}>
+            <li class:list={{ 'has-sub': item.children }}>
+              <a href={href(item.path)} aria-current={isActive(item) ? 'page' : undefined}>
                 {item.label}
+                {item.children && (
+                  <svg class="caret" viewBox="0 0 10 6" width="9" height="6" aria-hidden="true">
+                    <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" />
+                  </svg>
+                )}
               </a>
+              {item.children && (
+                <ul role="list" class="site-nav__sub">
+                  {item.children.map((sub) => (
+                    <li>
+                      <a href={href(sub.path)} aria-current={isCurrentSub(sub.path) ? 'page' : undefined}>
+                        {sub.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))
         }
@@ -61,6 +98,15 @@ const isActive = (p: string) => current.startsWith(p);
         nav.map((item) => (
           <li>
             <a href={href(item.path)}>{item.label}</a>
+            {item.children && (
+              <ul role="list" class="mobile-menu__sub">
+                {item.children.map((sub) => (
+                  <li>
+                    <a href={href(sub.path)}>{sub.label}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         ))
       }
@@ -102,7 +148,7 @@ const isActive = (p: string) => current.startsWith(p);
     height: var(--header-h);
   }
 
-  .site-nav ul {
+  .site-nav > ul {
     display: flex;
     gap: clamp(18px, 2.2vw, 34px);
   }
@@ -131,6 +177,70 @@ const isActive = (p: string) => current.startsWith(p);
   .site-nav a[aria-current='page']::after {
     transform: scaleX(1);
     transform-origin: left;
+  }
+
+  /* 하위 메뉴: 마우스를 올리거나 키보드로 이동하면 펼쳐집니다 */
+  .site-nav .has-sub {
+    position: relative;
+  }
+
+  .site-nav .caret {
+    display: inline-block;
+    margin-left: 5px;
+    vertical-align: 2px;
+    opacity: 0.7;
+  }
+
+  .site-nav__sub {
+    position: absolute;
+    top: 100%;
+    left: -16px;
+    z-index: 2;
+    display: grid;
+    min-width: 152px;
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 14px;
+    background: var(--paper);
+    color: var(--ink);
+    box-shadow: 0 18px 50px -18px rgba(19, 33, 29, 0.45), 0 0 0 1px var(--line);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-6px);
+    transition: opacity 0.25s var(--ease), transform 0.35s var(--ease), visibility 0.25s;
+  }
+
+  /* 메뉴와 하위 메뉴 사이 틈에서 마우스가 빠져도 닫히지 않게 */
+  .site-nav__sub::before {
+    content: '';
+    position: absolute;
+    inset: -12px 0 auto;
+    height: 12px;
+  }
+
+  .has-sub:hover .site-nav__sub,
+  .has-sub:focus-within .site-nav__sub {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .site-nav__sub a {
+    display: block;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.93rem;
+    white-space: nowrap;
+  }
+
+  .site-nav__sub a::after {
+    display: none;
+  }
+
+  .site-nav__sub a:hover,
+  .site-nav__sub a[aria-current='page'] {
+    background: var(--cream);
+    color: var(--green-600);
   }
 
   .site-header__logo {
@@ -259,6 +369,31 @@ const isActive = (p: string) => current.startsWith(p);
     letter-spacing: -0.04em;
     line-height: 1.2;
     border-bottom: 1px solid var(--line-dark);
+  }
+
+  .mobile-menu__sub {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+    padding: 10px 0 14px;
+    border-bottom: 1px solid var(--line-dark);
+  }
+
+  .mobile-menu__links .mobile-menu__sub a {
+    padding: 2px 0;
+    border: 0;
+    color: var(--on-dark-2);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .mobile-menu__links .mobile-menu__sub a:hover {
+    color: var(--gold-soft);
+  }
+
+  .mobile-menu__links li:has(> .mobile-menu__sub) > a {
+    border-bottom: 0;
   }
 
   .mobile-menu__foot {
