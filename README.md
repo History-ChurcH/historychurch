@@ -28,11 +28,11 @@ src/
   content/
     sermons/     설교 (유튜브에서 자동 생성 + CMS 에서 수정)
     bulletins/   주보
-    columns/     목회서신
-    notices/     공지 · 교회 소식 (홈 화면에는 고정 + 최근 30일 공지만 3개까지)
-    grace/       은혜나눔 (성도들의 간증 · 묵상) — 게시판에 함께 보임
-    posts/       게시판 (공지·주보·목회서신이 아닌 일반 글)
-    videos/      영상 (설교 외 유튜브 영상)
+    목회서신/    목회서신 (컬렉션 이름 columns)
+    공지/        공지 · 교회 소식 (notices) — 홈 화면에는 고정 + 최근 30일 공지만 3개까지
+    은혜나눔/    은혜나눔 (grace) — 성도들의 간증 · 묵상, 게시판에 함께 보임
+    게시판/      게시판 (posts) — 공지·주보·목회서신이 아닌 일반 글
+    영상/        영상 (videos) — 설교 외 유튜브 영상
     albums/      앨범
     */_템플릿.md 복사해서 쓰는 견본. 이름이 _ 로 시작하는 파일은 사이트에서 제외
   data/
@@ -96,6 +96,7 @@ scripts/
 - `_` 로 시작하는 파일은 사이트에서 빠집니다. 관리자 화면에서는 제목이 `[템플릿]` 으로 시작하는 글을 숨깁니다 (`config.yml` 의 `filter`).
 - 주보는 `src/lib/bulletin-loader.ts` 가 `public/uploads/bulletins/` 의 날짜 이름 파일을 날짜별로 묶어 만듭니다. 같은 날짜의 `.md` 가 있으면 `.md` 가 우선입니다. (파일만 올린 주보는 관리자 화면 목록에는 나오지 않습니다)
 - 큰 사진은 `optimize-uploads.yml` 이 WebP 로 줄여 다시 커밋합니다. 이미 400KB 이하인 파일은 그대로 둡니다.
+- 봉사자가 찾기 쉽도록 글 폴더는 한국어 이름입니다. 코드에서 쓰는 컬렉션 이름(columns 등)과 주소(/news/columns/…)는 영어 그대로이고, 폴더와의 연결은 `src/content.config.ts` 의 `md('목회서신')` 처럼 적혀 있습니다. 주보·설교·앨범과 사진 폴더(public/uploads)는 사진 주소가 바뀌지 않도록 영어로 둡니다.
 - 카테고리 목록: `/news/bulletins/` · `/news/columns/` · `/news/notices/` · `/news/posts/`(은혜나눔 + 게시판), 영상: `/videos/`
 
 ## 오류 제보함

@@ -24,6 +24,9 @@ import sharp from 'sharp';
 const WP = 'https://historychurch.org';
 const ROOT = join(import.meta.dirname, '..');
 const CONTENT = join(ROOT, 'src', 'content');
+/** 컬렉션 이름 → src/content 안의 폴더 이름 (봉사자가 알아보기 쉽게 한국어로 둔 폴더) */
+const FOLDER = { columns: '목회서신', notices: '공지', grace: '은혜나눔' };
+const folderOf = (collection) => FOLDER[collection] ?? collection;
 const UPLOADS = join(ROOT, 'public', 'uploads');
 
 const args = Object.fromEntries(
@@ -150,7 +153,7 @@ const q = (v) => JSON.stringify(v ?? '');
 const ymd = (d) => d.slice(0, 10);
 
 async function writeEntry(collection, slug, front, body = '') {
-  const dir = join(CONTENT, collection);
+  const dir = join(CONTENT, folderOf(collection));
   await mkdir(dir, { recursive: true });
   const file = join(dir, `${slug}.md`);
   const lines = ['---'];
@@ -194,7 +197,7 @@ async function importColumns() {
   for (const p of posts) {
     const date = ymd(p.date);
     const id = slug(date);
-    if (await exists(join(CONTENT, 'columns', `${id}.md`))) continue;
+    if (await exists(join(CONTENT, folderOf('columns'), `${id}.md`))) continue;
     const html = p.content.rendered;
     const srcs = imgSrcs(html);
     const map = new Map();
@@ -326,7 +329,7 @@ async function importNotices() {
   for (const d of docs.sort((a, b) => a.posted.localeCompare(b.posted))) {
     const date = d.posted.slice(0, 10);
     const id = slug(date);
-    if (await exists(join(CONTENT, 'notices', `${id}.md`))) continue;
+    if (await exists(join(CONTENT, folderOf('notices'), `${id}.md`))) continue;
     const images = [];
     for (const [i, src] of [...imgSrcs(d.content), ...d.attachments].entries()) {
       const local = await saveImage(src, 'notices', `${id}-${i + 1}`, 1800);
@@ -349,7 +352,7 @@ async function importGrace() {
   for (const d of docs.sort((a, b) => a.posted.localeCompare(b.posted))) {
     const date = d.posted.slice(0, 10);
     const id = slug(date);
-    if (await exists(join(CONTENT, 'grace', `${id}.md`))) continue;
+    if (await exists(join(CONTENT, folderOf('grace'), `${id}.md`))) continue;
     const images = [];
     for (const [i, src] of [...imgSrcs(d.content), ...d.attachments].entries()) {
       const local = await saveImage(src, 'grace', `${id}-${i + 1}`, 1600);
@@ -370,7 +373,7 @@ async function importGrace() {
 async function freeId(collection, date, title) {
   for (let n = 1; ; n++) {
     const id = n === 1 ? date : `${date}-${n}`;
-    const file = join(CONTENT, collection, `${id}.md`);
+    const file = join(CONTENT, folderOf(collection), `${id}.md`);
     if (!(await exists(file))) return { id, fresh: true };
     if ((await readFile(file, 'utf8')).includes(q(title))) return { id, fresh: false };
   }

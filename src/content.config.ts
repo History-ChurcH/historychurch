@@ -50,7 +50,7 @@ const sermons = defineCollection({
 
 /** 목회서신(칼럼) */
 const columns = defineCollection({
-  loader: md('columns'),
+  loader: md('목회서신'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -72,7 +72,7 @@ const bulletins = defineCollection({
 
 /** 공지 · 교회 소식 */
 const notices = defineCollection({
-  loader: md('notices'),
+  loader: md('공지'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -83,7 +83,7 @@ const notices = defineCollection({
 
 /** 은혜나눔 — 성도들의 간증 · 묵상 나눔 */
 const grace = defineCollection({
-  loader: md('grace'),
+  loader: md('은혜나눔'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -94,7 +94,7 @@ const grace = defineCollection({
 
 /** 게시판 — 공지·주보·목회서신이 아닌 일반 글 (게시판 목록에 은혜나눔과 함께 보입니다) */
 const posts = defineCollection({
-  loader: md('posts'),
+  loader: md('게시판'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
@@ -106,7 +106,7 @@ const posts = defineCollection({
 
 /** 영상 — 설교 외의 영상(찬양, 행사, 간증 등). 유튜브 주소만 적으면 됩니다. */
 const videos = defineCollection({
-  loader: md('videos'),
+  loader: md('영상'),
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),

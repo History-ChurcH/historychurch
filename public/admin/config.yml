@@ -105,7 +105,7 @@ collections:
     label_singular: 목회서신
     icon: edit_note
     description: 담임목사님의 목회서신(칼럼)입니다. 글을 붙여 넣고 저장하면 1~2분 뒤 홈페이지에 올라갑니다.
-    folder: /src/content/columns
+    folder: /src/content/목회서신
     filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/columns/{{filename}}/'
     create: true
@@ -130,7 +130,7 @@ collections:
     label_singular: 공지
     icon: campaign
     description: 행사 안내, 일정표, 순서지 같은 교회 소식입니다. 홈 화면에는 최근 30일 안의 공지가 보이고, '맨 위에 고정'을 켜면 기간과 상관없이 홈 화면과 공지 게시판 맨 위에 보입니다.
-    folder: /src/content/notices
+    folder: /src/content/공지
     filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/notices/{{filename}}/'
     create: true
@@ -155,7 +155,7 @@ collections:
     label_singular: 은혜나눔 글
     icon: volunteer_activism
     description: 성도들의 간증과 묵상 나눔입니다. 받은 글을 대신 올릴 때는 글쓴이 칸에 이름을 적어 주세요.
-    folder: /src/content/grace
+    folder: /src/content/은혜나눔
     filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/grace/{{filename}}/'
     create: true
@@ -180,7 +180,7 @@ collections:
     label_singular: 게시판 글
     icon: forum
     description: 공지·주보·목회서신이 아닌 글(사역 이야기, 행사 후기 등)입니다. 은혜나눔 글과 함께 게시판에 보입니다.
-    folder: /src/content/posts
+    folder: /src/content/게시판
     filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'news/posts/{{filename}}/'
     create: true
@@ -206,7 +206,7 @@ collections:
     label_singular: 영상
     icon: smart_display
     description: 찬양·행사·간증처럼 설교가 아닌 영상입니다. 유튜브에 올린 뒤 주소만 붙여 넣으세요. (예배 설교는 자동으로 올라오니 '설교' 메뉴를 쓰세요)
-    folder: /src/content/videos
+    folder: /src/content/영상
     filter: { field: title, pattern: '^(?!\[템플릿\])' } # _템플릿.md 는 목록에서 숨김
     preview_path: 'videos/{{filename}}/'
     create: true
