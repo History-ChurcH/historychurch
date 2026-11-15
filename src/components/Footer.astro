@@ -43,7 +43,7 @@ const here = Astro.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, 
           <ul role="list">
             <li><a href={site.links.youtube} target="_blank" rel="noopener">유튜브</a></li>
             <li><a href={site.links.blog} target="_blank" rel="noopener">네이버 블로그</a></li>
-            <li><a href={site.links.onlineChurch} target="_blank" rel="noopener">온라인 교회</a></li>
+            <li><a href={href('/online/')}>온라인 교회</a></li>
           </ul>
         </div>
       </div>

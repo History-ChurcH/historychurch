@@ -1,0 +1,186 @@
+---
+// 온라인 교회 — 가장 최근 주일예배 영상을 보여 줍니다.
+// 설교는 유튜브에서 매시간 자동으로 들어오므로(scripts/sync-sermons.mjs), 이 페이지도 매주 저절로 바뀝니다.
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import CrossMark from '../components/CrossMark.astro';
+import VideoPlayer from '../components/VideoPlayer.astro';
+import SermonCard from '../components/SermonCard.astro';
+import site from '../data/site.json';
+import { byDateDesc, href, longDate } from '../lib/utils';
+
+const sermons = (await getCollection('sermons')).sort(byDateDesc);
+const sunday = sermons.find((s) => s.data.category === '주일예배') ?? sermons[0];
+// 주일 다음으로 올라온 수요·금요 예배 (있으면)
+const recent = sermons.filter((s) => s.id !== sunday?.id).slice(0, 3);
+---
+
+<Base title="온라인 교회" description={`${site.name} 온라인 교회 — 이번 주 주일예배 말씀을 영상으로 함께합니다.`}>
+  <section class="online-hero darker">
+    <div class="container online-hero__inner">
+      <p class="label"><CrossMark /> 온라인 교회 · Online</p>
+      {
+        sunday ? (
+          <>
+            <div class="online-hero__head">
+              <span class="tag">{sunday.data.category}</span>
+              <span class="muted">{longDate(sunday.data.date)}</span>
+            </div>
+            <h1 class="h1">{sunday.data.title}</h1>
+            <p class="online-hero__meta muted">{[sunday.data.scripture, sunday.data.preacher].filter(Boolean).join(' · ')}</p>
+            <div class="online-hero__video">
+              <VideoPlayer id={sunday.data.youtube} title={sunday.data.title} eager />
+            </div>
+            <div class="btn-row online-hero__actions">
+              <a class="btn btn--light" href={href(`/sermons/${sunday.id}/`)}>
+                본문 말씀과 함께 보기<span class="btn__icon"><CrossMark class="" /></span>
+              </a>
+              <a class="btn btn--ghost" href={site.links.youtube} target="_blank" rel="noopener">
+                유튜브 채널<span class="btn__icon"><CrossMark class="" /></span>
+              </a>
+            </div>
+          </>
+        ) : (
+          <h1 class="h1">곧 영상이 올라옵니다</h1>
+        )
+      }
+    </div>
+  </section>
+
+  {
+    sunday?.data.passage && (
+      <section class="section paper">
+        <div class="container narrow">
+          <p class="label passage-label">
+            <CrossMark /> 본문 말씀 {sunday.data.scripture && `· ${sunday.data.scripture}`}
+          </p>
+          <div class="passage serif">
+            {sunday.data.passage.split('\n').map((line) => {
+              const m = line.match(/^(\d+)\s+(.*)$/);
+              return m ? (
+                <p>
+                  <sup class="num">{m[1]}</sup>
+                  {m[2]}
+                </p>
+              ) : (
+                <p>{line}</p>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  {
+    recent.length > 0 && (
+      <section class="section--tight cream">
+        <div class="container">
+          <div class="section-head recent-head">
+            <p class="label">
+              <CrossMark /> 최근 예배
+            </p>
+            <a class="text-link" href={href('/sermons/')}>
+              설교 전체 보기 →
+            </a>
+          </div>
+          <div class="recent">
+            {recent.map((s) => (
+              <SermonCard sermon={s} />
+            ))}
+          </div>
+          {site.links.onlineChurch && (
+            <p class="platform muted">
+              실시간 채팅과 함께 드리는 예배는{' '}
+              <a href={site.links.onlineChurch} target="_blank" rel="noopener">
+                온라인 교회 플랫폼
+              </a>
+              에서도 참여하실 수 있습니다.
+            </p>
+          )}
+        </div>
+      </section>
+    )
+  }
+</Base>
+
+<style>
+  .online-hero {
+    padding-top: calc(var(--header-h) + clamp(40px, 6vw, 80px));
+    padding-bottom: clamp(48px, 6vw, 80px);
+  }
+
+  .online-hero .label {
+    margin-bottom: 28px;
+  }
+
+  .online-hero__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    font-size: 0.93rem;
+  }
+
+  .online-hero__meta {
+    margin-top: 16px;
+  }
+
+  .online-hero__video {
+    max-width: 1100px;
+    margin-top: clamp(32px, 4vw, 56px);
+  }
+
+  .online-hero__actions {
+    margin-top: 32px;
+  }
+
+  .passage-label {
+    margin-bottom: 24px;
+  }
+
+  .passage {
+    display: grid;
+    gap: 10px;
+    padding: clamp(28px, 4vw, 48px);
+    border-radius: var(--radius);
+    background: var(--cream);
+    font-size: 1.08rem;
+    line-height: 1.95;
+  }
+
+  .passage sup {
+    margin-right: 8px;
+    font-family: var(--sans);
+    font-size: 0.72em;
+    font-weight: 600;
+    color: var(--green-600);
+  }
+
+  .recent-head {
+    margin-bottom: 32px;
+  }
+
+  .recent {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+  }
+
+  @media (max-width: 860px) {
+    .recent {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .platform {
+    margin-top: 48px;
+    text-align: center;
+    font-size: 0.93rem;
+  }
+
+  .platform a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+</style>
